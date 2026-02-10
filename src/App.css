@@ -1,0 +1,209 @@
+/* ===== Chat à esquerda ===== */
+.app--chat-open {
+  padding-left: 380px;
+}
+
+.app {
+  min-height: 100vh;
+  transition: padding-right var(--duration-normal) var(--ease-out);
+}
+
+.workspace {
+  min-width: 0;
+}
+
+/* Toolbar: barra de app premium */
+.app .toolbar {
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  transition: background var(--duration-fast), border-color var(--duration-fast);
+}
+
+.app .deck-title-input {
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.app .deck-title-display {
+  background: none;
+  border: none;
+  cursor: default;
+  color: var(--text-primary);
+}
+
+/* Canvas do editor como "palco" */
+.app .editor-canvas-wrapper {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md), 0 0 0 1px var(--border-subtle);
+  transition: box-shadow var(--duration-normal);
+}
+
+.app .editor-canvas-wrapper:hover {
+  box-shadow: var(--shadow-lg), 0 0 0 1px var(--border);
+}
+
+.app .editor-canvas {
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+/* Miniaturas: hover e ativo refinados */
+.app .slide-thumb {
+  transition: border-color var(--duration-fast), box-shadow var(--duration-fast), transform var(--duration-fast);
+}
+
+.app .slide-thumb:hover {
+  box-shadow: var(--shadow-sm);
+}
+
+.app .slide-thumb.active {
+  box-shadow: 0 0 0 2px var(--accent), var(--shadow-sm);
+}
+
+/* Botões de modelo: mais respiro e feedback */
+.app .template-buttons {
+  gap: var(--space-2);
+}
+
+.app .template-btn {
+  transition: background var(--duration-fast), color var(--duration-fast), transform var(--duration-fast);
+}
+
+.app .template-btn:hover {
+  transform: translateY(-1px);
+}
+
+.app .template-btn.active {
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+/* Foco acessível */
+.app button:focus-visible,
+.app select:focus-visible,
+.app input:focus-visible,
+.app textarea:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+/* Mais respiro na área de controles do slide */
+.app .slide-animations {
+  margin-top: var(--space-4, 16px);
+}
+
+.app .slide-templates {
+  margin-top: var(--space-4, 16px);
+}
+
+.app .templates-label {
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+/* Logo sem emoji: marca geométrica */
+.app .logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.app .logo-icon {
+  width: 8px;
+  height: 8px;
+  background: var(--accent);
+  transform: rotate(45deg);
+  flex-shrink: 0;
+  border-radius: 1px;
+}
+
+.app .btn-ai {
+  background: var(--accent);
+  color: #fff;
+}
+
+.app .btn-ai:hover {
+  background: var(--accent-hover);
+  filter: none;
+}
+
+/* Modo apresentação fullscreen */
+.presentation-mode {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.presentation-close {
+  position: absolute;
+  top: 16px;
+  right: 24px;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  font-size: 1.5rem;
+  cursor: pointer;
+  border-radius: 8px;
+  z-index: 10;
+}
+
+.presentation-close:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+.presentation-slide-wrapper {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+}
+
+.presentation-slide {
+  width: 100%;
+  max-width: 1200px;
+  aspect-ratio: 16/9;
+  background: var(--bg-slide);
+  border-radius: 12px;
+  padding: 56px 72px;
+  position: relative;
+  color: var(--text-primary);
+}
+
+.presentation-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 20px;
+  background: rgba(0,0,0,0.5);
+}
+
+.presentation-nav-btn {
+  width: 48px;
+  height: 48px;
+  border: none;
+  background: var(--accent);
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.presentation-nav-btn:hover {
+  background: var(--accent-hover);
+}
+
+.presentation-counter {
+  color: rgba(255,255,255,0.9);
+  font-size: 1rem;
+}

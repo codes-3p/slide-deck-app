@@ -1,0 +1,8 @@
+# Chaves e segredos (nunca fazer commit do .env)
+server/.env
+.env
+.env.local
+
+# Dependências
+node_modules/
+server/node_modules/

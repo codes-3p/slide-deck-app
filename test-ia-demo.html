@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste de IA - SlideDeck</title>
+</head>
+<body>
+    <h1>Teste de Geração de Apresentação com IA</h1>
+    <button onclick="testarGeracaoIA()">Gerar Apresentação Teste</button>
+    <div id="resultado"></div>
+
+    <script>
+        async function testarGeracaoIA() {
+            const button = document.querySelector('button');
+            const resultado = document.getElementById('resultado');
+            
+            button.textContent = 'Gerando...';
+            button.disabled = true;
+            
+            const formData = new FormData();
+            formData.append('description', 'Crie uma apresentação sobre o SlideDeck como ferramenta moderna de apresentações. Inclua: introdução, recursos principais, templates disponíveis, integração com IA, vantagens e conclusão. Use design profissional.');
+            formData.append('deckTitle', 'SlideDeck - O Futuro das Apresentações');
+            
+            try {
+                console.log('🚀 Iniciando geração de apresentação...');
+                
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                console.log('📥 Resposta recebida:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('📊 Dados recebidos:', data);
+                
+                // Mostrar resultados
+                resultado.innerHTML = `
+                    <h2>✅ Apresentação Gerada com Sucesso!</h2>
+                    <p><strong>Título:</strong> ${data.deckTitle}</p>
+                    <p><strong>Slides criados:</strong> ${data.slides?.length || 0}</p>
+                    
+                    <h3>Slides:</h3>
+                    <ul>
+                        ${data.slides?.map((slide, index) => `
+                            <li>
+                                <strong>Slide ${index + 1}</strong> - 
+                                <em>${slide.layout}</em>: 
+                                ${slide.content?.title || slide.content?.text?.substring(0, 50) + '...' || 'Sem título'}
+                            </li>
+                        `).join('') || '<li>Nenhum slide encontrado</li>'}
+                    </ul>
+                    
+                    ${data.brandColors ? `
+                        <h3>Cores da Marca:</h3>
+                        <p>Primária: ${data.brandColors.primary}</p>
+                        ${data.brandColors.secondary ? `<p>Secundária: ${data.brandColors.secondary}</p>` : ''}
+                    ` : ''}
+                `;
+                
+                // Tentar atualizar a apresentação principal se disponível
+                if (window.parent && window.parent.state) {
+                    window.parent.state.deckTitle = data.deckTitle;
+                    window.parent.state.slides = data.slides;
+                    window.parent.state.currentIndex = 0;
+                    if (data.brandColors) window.parent.state.brandColors = data.brandColors;
+                    if (window.parent.render) window.parent.render();
+                    console.log('✅ Interface principal atualizada!');
+                }
+                
+            } catch (error) {
+                console.error('❌ Erro:', error);
+                resultado.innerHTML = `
+                    <h2>❌ Erro ao Gerar Apresentação</h2>
+                    <p><strong>Mensagem:</strong> ${error.message}</p>
+                    <p>💡 Verifique se o servidor está rodando em http://localhost:3788</p>
+                `;
+            } finally {
+                button.textContent = 'Gerar Apresentação Teste';
+                button.disabled = false;
+            }
+        }
+        
+        // Log inicial
+        console.log('🧪 Teste de IA carregado. Clique no botão para testar a geração de apresentação.');
+    </script>
+</body>
+</html>

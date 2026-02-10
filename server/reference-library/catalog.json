@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "description": "Banco de referências: templates PPTX reais que a IA usa para montar apresentações. Inclui novos templates via POST /api/reference-library/templates.",
+  "templates": [
+    {
+      "id": "corporate-professional",
+      "name": "Corporate Professional",
+      "description": "Template corporativo: hero, secção, lista com ícones e métricas. Ideal para apresentações de negócios, relatórios e propostas formais.",
+      "filename": "corporate-professional.pptx",
+      "slideLayouts": [
+        {
+          "index": 0,
+          "type": "hero"
+        },
+        {
+          "index": 1,
+          "type": "section"
+        },
+        {
+          "index": 2,
+          "type": "bullet"
+        },
+        {
+          "index": 3,
+          "type": "stats-row"
+        }
+      ],
+      "tags": [
+        "corporate",
+        "business",
+        "formal",
+        "relatório"
+      ]
+    },
+    {
+      "id": "startup-dynamic",
+      "name": "Startup Dynamic",
+      "description": "Template dinâmico para pitch e startups: hero impactante, lista de benefícios e citação. Estilo moderno e direto.",
+      "filename": "startup-dynamic.pptx",
+      "slideLayouts": [
+        {
+          "index": 0,
+          "type": "hero"
+        },
+        {
+          "index": 1,
+          "type": "bullet"
+        },
+        {
+          "index": 2,
+          "type": "quote"
+        }
+      ],
+      "tags": [
+        "startup",
+        "pitch",
+        "moderno",
+        "vendas"
+      ]
+    }
+  ]
+}

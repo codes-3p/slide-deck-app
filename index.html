@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SlideDeck — Apresentações inteligentes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Barra superior -->
+    <header class="toolbar">
+      <div class="toolbar-left">
+        <h1 class="logo">
+          <span class="logo-icon">◇</span>
+          SlideDeck
+        </h1>
+        <input type="text" id="deck-title" class="deck-title-input" value="Minha Apresentação" />
+      </div>
+      <div class="toolbar-center">
+        <button type="button" class="btn btn-ghost" id="btn-undo" title="Desfazer">↶</button>
+        <button type="button" class="btn btn-ghost" id="btn-redo" title="Refazer">↷</button>
+        <span class="toolbar-divider"></span>
+        <button type="button" class="btn btn-ghost" id="btn-theme" title="Mudar tema">🎨</button>
+      </div>
+      <div class="toolbar-right">
+        <button type="button" class="btn btn-ai" id="btn-create-ai">✨ Criar com IA</button>
+        <button type="button" class="btn btn-secondary" id="btn-add-slide">+ Novo slide</button>
+        <button type="button" class="btn btn-primary" id="btn-present">
+          <span>Apresentar</span>
+          <span class="shortcut">F5</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <!-- Painel de slides (miniatura) -->
+      <aside class="slide-panel">
+        <div class="slide-panel-header">
+          <span>Slides</span>
+          <button type="button" class="btn btn-icon" id="btn-add-slide-panel" title="Adicionar slide">+</button>
+        </div>
+        <div id="slide-thumbnails" class="slide-thumbnails"></div>
+      </aside>
+
+      <!-- Área do editor -->
+      <section class="editor-area">
+        <div class="editor-canvas-wrapper">
+          <div id="editor-canvas" class="editor-canvas" data-ratio="16/9"></div>
+        </div>
+        <div class="slide-animations">
+          <label for="slide-transition">Transição:</label>
+          <select id="slide-transition" class="animation-select" title="Transição entre slides (estilo Google Slides / PowerPoint)">
+            <option value="none">Nenhuma</option>
+            <option value="fade" selected>Dissolver</option>
+            <option value="slide">Deslizar</option>
+            <option value="zoom">Zoom</option>
+            <option value="convex">Convexo</option>
+            <option value="concave">Côncavo</option>
+          </select>
+          <label for="slide-element-animation">Animação elementos:</label>
+          <select id="slide-element-animation" class="animation-select" title="Animação de entrada dos elementos no slide">
+            <option value="none">Nenhuma</option>
+            <option value="fade" selected>Aparecer</option>
+            <option value="slideUp">Entrar de baixo</option>
+            <option value="slideLeft">Entrar da esquerda</option>
+            <option value="zoom">Zoom</option>
+          </select>
+        </div>
+        <div class="slide-templates">
+          <span class="templates-label">Modelo do slide:</span>
+          <div class="template-buttons">
+            <button type="button" class="template-btn" data-layout="hero">Hero</button>
+            <button type="button" class="template-btn active" data-layout="title">Título</button>
+            <button type="button" class="template-btn" data-layout="title-subtitle">Título + Subtítulo</button>
+            <button type="button" class="template-btn" data-layout="section">Seção</button>
+            <button type="button" class="template-btn" data-layout="bullet">Lista</button>
+            <button type="button" class="template-btn" data-layout="timeline">Timeline</button>
+            <button type="button" class="template-btn" data-layout="two-column">Duas colunas</button>
+            <button type="button" class="template-btn" data-layout="big-number">Número grande</button>
+            <button type="button" class="template-btn" data-layout="stats-row">3 stats</button>
+            <button type="button" class="template-btn" data-layout="quote">Citação</button>
+            <button type="button" class="template-btn" data-layout="image-text">Imagem + texto</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Chat Lateral de IA (Estilo Manus.ai) -->
+  <aside class="ai-chat-sidebar" id="ai-chat-sidebar">
+    <div class="chat-header">
+      <h3>🤖 Assistente de IA</h3>
+      <button type="button" class="chat-toggle" id="chat-toggle" title="Minimizar/Expandir">→</button>
+    </div>
+    
+    <div class="chat-history" id="chat-history">
+      <div class="chat-message ai-message">
+        <div class="message-avatar">🤖</div>
+        <div class="message-content">
+          <p>Olá! 👋 Sou seu assistente de apresentações. Posso ajudar você a criar apresentações profissionais em segundos!</p>
+          <p>Descreva o que você precisa ou pergunte-me qualquer coisa sobre o seu conteúdo.</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="chat-input-area">
+      <div class="file-attachment-preview" id="file-attachment-preview" style="display: none;">
+        <span class="attached-file" id="attached-file-name"></span>
+        <button type="button" class="remove-attachment" id="remove-attachment">×</button>
+      </div>
+      
+      <div class="chat-input-container">
+        <textarea 
+          id="chat-input" 
+          class="chat-input" 
+          placeholder="Descreva sua apresentação ou tire dúvidas... (Shift+Enter para nova linha)"
+          rows="3"
+        ></textarea>
+        <div class="chat-actions">
+          <button type="button" class="attach-file-btn" id="attach-file-btn" title="Anexar arquivo">📎</button>
+          <button type="button" class="send-message-btn" id="send-message-btn" title="Enviar">➤</button>
+        </div>
+      </div>
+      
+      <input type="file" id="chat-file-input" accept=".pptx,.txt,.md,.pdf,image/jpeg,image/png,image/webp,image/gif" hidden />
+    </div>
+    
+    <div class="chat-powered-by">
+      <small>Powered by GPT-4o-mini</small>
+    </div>
+  </aside>
+
+  <!-- Modal de Confiirmação (simplificado) -->
+  <div id="ai-confirm-modal" class="modal-overlay hidden">
+    <div class="modal small-modal">
+      <div class="modal-header">
+        <h3>Confirmar Geração</h3>
+        <button type="button" class="modal-close" id="confirm-modal-close">×</button>
+      </div>
+      <div class="modal-body">
+        <p>Gerar nova apresentação? Isso substituirá a atual.</p>
+        <div style="margin-top: 10px;">
+          <label>
+            <input type="checkbox" id="keep-current-deck" checked />
+            Manter apresentação atual como backup
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="cancel-generation">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="confirm-generation">Gerar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modo apresentação (fullscreen) -->
+  <div id="presentation-mode" class="presentation-mode hidden">
+    <button type="button" class="presentation-close" id="presentation-close" aria-label="Sair">×</button>
+    <div class="presentation-slide-wrapper">
+      <div id="presentation-slide" class="presentation-slide"></div>
+    </div>
+    <div class="presentation-nav">
+      <button type="button" class="presentation-nav-btn" id="presentation-prev" aria-label="Anterior">‹</button>
+      <span class="presentation-counter"><span id="current-slide-num">1</span> / <span id="total-slides-num">1</span></span>
+      <button type="button" class="presentation-nav-btn" id="presentation-next" aria-label="Próximo">›</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
