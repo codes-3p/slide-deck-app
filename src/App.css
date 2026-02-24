@@ -326,6 +326,12 @@
   border-color: var(--accent);
 }
 
+/* Opções de select: texto escuro em fundo claro (evita texto branco em fundo branco no dropdown) */
+.app select option {
+  background: #fff;
+  color: #1a1a1a;
+}
+
 /* Logo sem emoji: marca geométrica */
 .app .logo {
   display: flex;

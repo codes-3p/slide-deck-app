@@ -156,6 +156,11 @@
   color: var(--text-primary);
   font-size: 0.85rem;
 }
+/* Opções do dropdown: texto escuro em fundo claro para sempre ficarem legíveis */
+.chat-sidebar__provider-select option {
+  background: #fff;
+  color: #1a1a1a;
+}
 
 .chat-sidebar__provider-select:focus {
   outline: none;

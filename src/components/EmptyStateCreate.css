@@ -159,6 +159,11 @@
   color: var(--text-primary);
   cursor: pointer;
 }
+/* Opções do dropdown: texto escuro em fundo claro para sempre ficarem legíveis */
+.empty-state-create__select option {
+  background: #fff;
+  color: #1a1a1a;
+}
 
 .empty-state-create__attachment {
   display: inline-flex;
