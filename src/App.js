@@ -4,7 +4,7 @@ import { TOOLBAR, EDITOR, LAYOUT_GROUPS } from './constants/copy';
 import { renderSlideToHtml, getContentFromEditor } from './utils/slideRender';
 import { downloadPptx } from './utils/exportPptx';
 import ChatSidebar from './components/ChatSidebar';
-import EmptyStateCreate from './components/EmptyStateCreate';
+import { AnimatedAIChat } from './components/ui/AnimatedAIChat';
 import './App.css';
 
 const THEME_KEY = 'slidedeck-theme';
@@ -315,7 +315,7 @@ export default function App() {
 
       <main className="workspace">
         {!hasSlides ? (
-          <EmptyStateCreate onCreated={handlePresentationGenerated} />
+          <AnimatedAIChat onCreated={handlePresentationGenerated} />
         ) : (
           <>
             <aside className="slide-panel">
