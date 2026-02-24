@@ -318,9 +318,18 @@ const projectRoot = path.join(__dirname, '..');
 const buildDir = path.join(projectRoot, 'build');
 const frontendDir = fs.existsSync(path.join(buildDir, 'index.html')) ? buildDir : projectRoot;
 
-// Rota raiz: serve index.html
+// Rota raiz: serve index.html com lista de providers injetada (evita cache do fetch)
 app.get('/', (_, res) => {
-  res.sendFile(path.join(frontendDir, 'index.html'));
+  const indexPath = path.join(frontendDir, 'index.html');
+  let html = fs.readFileSync(indexPath, 'utf8');
+  const providers = getAvailableProviders();
+  const script = `<script>window.__SLIDEDECK_PROVIDERS__=${JSON.stringify(providers)};</script>`;
+  if (!html.includes('__SLIDEDECK_PROVIDERS__')) {
+    html = html.replace('</head>', `${script}</head>`);
+  }
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.send(html);
 });
 
 // Frontend estático (CSS, JS, etc.)

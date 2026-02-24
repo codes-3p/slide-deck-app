@@ -10,19 +10,33 @@ export default function EmptyStateCreate({ onCreated }) {
   const [deckTitle, setDeckTitle] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [providers, setProviders] = useState([]);
-  const [provider, setProvider] = useState('openai');
+  const [providers, setProviders] = useState(() => {
+    try {
+      const list = window.__SLIDEDECK_PROVIDERS__;
+      return Array.isArray(list) ? list : [];
+    } catch (_) { return []; }
+  });
+  const [provider, setProvider] = useState(() => {
+    try {
+      const list = window.__SLIDEDECK_PROVIDERS__;
+      if (Array.isArray(list) && list.length) {
+        const p = list.find((x) => x.id === 'openai') || list[0];
+        return p ? p.id : 'openai';
+      }
+    } catch (_) {}
+    return 'openai';
+  });
   const [attachment, setAttachment] = useState(null);
   const fileInputRef = useRef(null);
 
   React.useEffect(() => {
-    fetch((API_BASE || '') + '/api/providers')
+    fetch((API_BASE || '') + '/api/providers?t=' + Date.now(), { cache: 'no-store' })
       .then((r) => r.json())
       .then((d) => {
         if (Array.isArray(d?.providers) && d.providers.length) {
           setProviders(d.providers);
           const first = d.providers.find((p) => p.id === 'openai') || d.providers[0];
-          if (first) setProvider(first.id);
+          if (first) setProvider((prev) => (prev ? prev : first.id));
         }
       })
       .catch(() => {});

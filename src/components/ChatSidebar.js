@@ -11,8 +11,19 @@ export default function ChatSidebar({ onPresentationGenerated, minimized, onTogg
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [attachment, setAttachment] = useState(null);
-  const [providers, setProviders] = useState([]);
-  const [provider, setProvider] = useState('openai');
+  const [providers, setProviders] = useState(function getInitialProviders() {
+    try { return Array.isArray(window.__SLIDEDECK_PROVIDERS__) ? window.__SLIDEDECK_PROVIDERS__ : []; } catch (_) { return []; }
+  });
+  const [provider, setProvider] = useState(function getInitialProvider() {
+    try {
+      var list = window.__SLIDEDECK_PROVIDERS__;
+      if (Array.isArray(list) && list.length) {
+        var p = list.find(function(x) { return x.id === 'openai'; }) || list[0];
+        return p ? p.id : 'openai';
+      }
+    } catch (_) {}
+    return 'openai';
+  });
   const fileInputRef = useRef(null);
   const historyEndRef = useRef(null);
 
@@ -23,7 +34,7 @@ export default function ChatSidebar({ onPresentationGenerated, minimized, onTogg
         if (Array.isArray(d.providers) && d.providers.length) {
           setProviders(d.providers);
           const preferred = d.providers.find((p) => p.id === 'openai') || d.providers[0];
-          if (preferred) setProvider(preferred.id);
+          if (preferred) setProvider(function(prev) { return prev ? prev : preferred.id; });
         }
       })
       .catch(() => {});

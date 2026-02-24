@@ -82,8 +82,22 @@ export function AnimatedAIChat({ onCreated }) {
   const [activeSuggestion, setActiveSuggestion] = useState(-1);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [providers, setProviders] = useState([]);
-  const [provider, setProvider] = useState('openai');
+  const [providers, setProviders] = useState(() => {
+    try {
+      const list = window.__SLIDEDECK_PROVIDERS__;
+      return Array.isArray(list) ? list : [];
+    } catch (_) { return []; }
+  });
+  const [provider, setProvider] = useState(() => {
+    try {
+      const list = window.__SLIDEDECK_PROVIDERS__;
+      if (Array.isArray(list) && list.length) {
+        const p = list.find((x) => x.id === 'openai') || list[0];
+        return p ? p.id : 'openai';
+      }
+    } catch (_) {}
+    return 'openai';
+  });
   const { textareaRef, adjustHeight } = useAutoResizeTextarea({ minHeight: 60, maxHeight: 200 });
   const [inputFocused, setInputFocused] = useState(false);
   const commandPaletteRef = useRef(null);
@@ -96,7 +110,7 @@ export function AnimatedAIChat({ onCreated }) {
         if (Array.isArray(d?.providers) && d.providers.length) {
           setProviders(d.providers);
           const preferred = d.providers.find((p) => p.id === 'openai') || d.providers[0];
-          if (preferred) setProvider(preferred.id);
+          if (preferred) setProvider((prev) => (prev ? prev : preferred.id));
         }
       })
       .catch(() => {});
