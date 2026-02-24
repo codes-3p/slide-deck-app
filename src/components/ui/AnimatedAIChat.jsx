@@ -90,7 +90,7 @@ export function AnimatedAIChat({ onCreated }) {
   const fileInputRef = useRef(null);
 
   useEffect(() => {
-    fetch((API_BASE || '') + '/api/providers', { cache: 'no-store' })
+    fetch((API_BASE || '') + '/api/providers?t=' + Date.now(), { cache: 'no-store', headers: { Pragma: 'no-cache' } })
       .then((r) => r.json())
       .then((d) => {
         if (Array.isArray(d?.providers) && d.providers.length) {
