@@ -1,18 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { CHAT_SIDEBAR, SUGGESTIONS } from '../constants/copy';
 import './ChatSidebar.css';
 
 const API_BASE = '';
 
-const SUGGESTIONS = [
-  'Pitch de startup: problema, solução, métricas e call to action',
-  'Relatório trimestral com dados, gráficos e conclusões',
-  'Onboarding da equipe: missão, valores e primeiros passos',
-  'Apresentação de produto com benefícios e casos de uso'
-];
-
 export default function ChatSidebar({ onPresentationGenerated, minimized, onToggleMinimize }) {
   const [messages, setMessages] = useState([
-    { id: 1, role: 'ai', text: 'Descreva o tema ou o conteúdo da apresentação. Eu gero os slides para você. Depois edite no painel ao lado e baixe em PPTX.', isWelcome: true }
+    { id: 1, role: 'ai', text: CHAT_SIDEBAR.welcome, isWelcome: true }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -98,7 +92,7 @@ export default function ChatSidebar({ onPresentationGenerated, minimized, onTogg
   return (
     <aside className={`chat-sidebar ${minimized ? 'chat-sidebar--minimized' : ''}`}>
       <div className="chat-sidebar__header">
-        <h3>Assistente de IA</h3>
+        <h3>{CHAT_SIDEBAR.title}</h3>
         <button type="button" className="chat-sidebar__toggle" onClick={onToggleMinimize} title={minimized ? 'Expandir' : 'Recolher'}>
           {minimized ? '>' : '<'}
         </button>
@@ -124,7 +118,7 @@ export default function ChatSidebar({ onPresentationGenerated, minimized, onTogg
         {loading && (
           <div className="chat-msg chat-msg--ai chat-msg--loading">
             <div className="chat-msg__avatar">IA</div>
-            <div className="chat-msg__content"><p>Gerando sua apresentação...</p></div>
+            <div className="chat-msg__content"><p>{CHAT_SIDEBAR.generating}</p></div>
           </div>
         )}
         <div ref={historyEndRef} />
@@ -132,7 +126,7 @@ export default function ChatSidebar({ onPresentationGenerated, minimized, onTogg
       <div className="chat-sidebar__input-area">
         {providers.length > 1 && (
           <div className="chat-sidebar__provider">
-            <label htmlFor="chat-provider">Modelo de IA:</label>
+            <label htmlFor="chat-provider">{CHAT_SIDEBAR.providerLabel}</label>
             <select id="chat-provider" className="chat-sidebar__provider-select" value={provider} onChange={(e) => setProvider(e.target.value)}>
               {providers.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>
@@ -149,7 +143,7 @@ export default function ChatSidebar({ onPresentationGenerated, minimized, onTogg
         <div className="chat-sidebar__input-wrap">
           <textarea
             className="chat-sidebar__input"
-            placeholder="Ex.: Pitch de startup, relatório trimestral..."
+            placeholder={CHAT_SIDEBAR.inputPlaceholder}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -158,17 +152,17 @@ export default function ChatSidebar({ onPresentationGenerated, minimized, onTogg
           />
           <div className="chat-sidebar__actions">
             <button type="button" className="chat-sidebar__btn-attach" onClick={() => fileInputRef.current?.click()} title="Anexar arquivo">
-              Anexar
+              {CHAT_SIDEBAR.attach}
             </button>
             <button type="button" className="chat-sidebar__btn-send" onClick={handleSend} disabled={loading} title="Enviar">
-              Enviar
+              {CHAT_SIDEBAR.send}
             </button>
           </div>
         </div>
         <input ref={fileInputRef} type="file" accept=".pptx,.txt,.md,.pdf,image/*" hidden onChange={onFileChange} />
       </div>
       <div className="chat-sidebar__footer">
-        Enter para enviar · Shift+Enter nova linha
+        {CHAT_SIDEBAR.footer}
       </div>
     </aside>
   );

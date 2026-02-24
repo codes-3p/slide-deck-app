@@ -1,10 +1,23 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { LAYOUTS, DEFAULT_SLIDE, LAYOUT_KEYS, TRANSITIONS, ELEMENT_ANIMATIONS } from './constants';
+import { LAYOUTS, DEFAULT_SLIDE, TRANSITIONS, ELEMENT_ANIMATIONS } from './constants';
+import { TOOLBAR, EDITOR, LAYOUT_GROUPS } from './constants/copy';
 import { renderSlideToHtml, getContentFromEditor } from './utils/slideRender';
 import { downloadPptx } from './utils/exportPptx';
 import ChatSidebar from './components/ChatSidebar';
 import EmptyStateCreate from './components/EmptyStateCreate';
 import './App.css';
+
+const THEME_KEY = 'slidedeck-theme';
+const DRAG_HINT_KEY = 'slidedeck-drag-hint-seen';
+
+function getInitialTheme() {
+  try {
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved === 'light' || saved === 'dark') return saved;
+  } catch (_) {}
+  if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: light)').matches) return 'light';
+  return 'dark';
+}
 
 const initialSlides = [];
 
@@ -18,9 +31,38 @@ export default function App() {
   const [presentationOpen, setPresentationOpen] = useState(false);
   const [dragSlideIndex, setDragSlideIndex] = useState(null);
   const [dropTargetIndex, setDropTargetIndex] = useState(null);
+  const [showDragHint, setShowDragHint] = useState(false);
   const editorRef = useRef(null);
 
   const currentSlide = slides[currentIndex] || slides[0];
+
+  useEffect(() => {
+    const t = getInitialTheme();
+    document.documentElement.setAttribute('data-theme', t);
+    setThemeState(t);
+  }, []);
+
+  const [theme, setThemeState] = useState('dark');
+
+  const setTheme = (newTheme) => {
+    document.documentElement.setAttribute('data-theme', newTheme);
+    setThemeState(newTheme);
+    try { localStorage.setItem(THEME_KEY, newTheme); } catch (_) {}
+  };
+
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
+
+  useEffect(() => {
+    const seen = slides.length >= 2 && !localStorage.getItem(DRAG_HINT_KEY);
+    setShowDragHint(!!seen);
+  }, [slides.length]);
+
+  const dismissDragHint = () => {
+    try { localStorage.setItem(DRAG_HINT_KEY, '1'); } catch (_) {}
+    setShowDragHint(false);
+  };
 
   useEffect(() => {
     document.body.style.overflow = presentationOpen ? 'hidden' : '';
@@ -214,11 +256,13 @@ export default function App() {
 
   return (
     <div className={`app ${chatMinimized ? '' : 'app--chat-open'} ${hasSlides ? 'app--has-slides' : ''}`}>
-      <ChatSidebar
-        onPresentationGenerated={handlePresentationGenerated}
-        minimized={chatMinimized}
-        onToggleMinimize={() => setChatMinimized((m) => !m)}
-      />
+      {hasSlides && (
+        <ChatSidebar
+          onPresentationGenerated={handlePresentationGenerated}
+          minimized={chatMinimized}
+          onToggleMinimize={() => setChatMinimized((m) => !m)}
+        />
+      )}
 
       <header className="toolbar">
         <div className="toolbar-left">
@@ -238,10 +282,14 @@ export default function App() {
           )}
         </div>
         <div className="toolbar-right">
+          <button type="button" className="toolbar-theme-toggle" onClick={toggleTheme} title={theme === 'dark' ? 'Modo claro' : 'Modo escuro'} aria-label="Alternar tema">
+            <iconify-icon icon="lucide:sun" className="theme-icon theme-icon--light" />
+            <iconify-icon icon="lucide:moon" className="theme-icon theme-icon--dark" />
+          </button>
           {hasSlides && (
             <>
               <button type="button" className="btn btn-ai" onClick={() => setChatMinimized(false)} title="Gerar mais slides com IA">
-                Criar com IA
+                {TOOLBAR.createWithAI}
               </button>
               <button
                 type="button"
@@ -253,12 +301,12 @@ export default function App() {
                     alert(e?.message || 'Erro ao baixar. Verifica se o servidor está a correr (porta 3788).');
                   }
                 }}
-                title="Exportar em PowerPoint (.pptx)"
+                title={TOOLBAR.downloadPptxTitle}
               >
-                Baixar PPTX
+                {TOOLBAR.downloadPptx}
               </button>
-              <button type="button" className="btn btn-primary" onClick={openPresentation} title="Abrir em tela cheia">
-                Apresentar
+              <button type="button" className="btn btn-primary" onClick={openPresentation} title={TOOLBAR.presentTitle}>
+                {TOOLBAR.present}
               </button>
             </>
           )}
@@ -272,9 +320,15 @@ export default function App() {
           <>
             <aside className="slide-panel">
               <div className="slide-panel-header">
-                <span>Slides</span>
-                <button type="button" className="btn btn-icon slide-panel-add" onClick={addSlide} title="Adicionar slide">+</button>
+                <span>{EDITOR.slidesLabel}</span>
+                <button type="button" className="btn btn-icon slide-panel-add" onClick={addSlide} title={TOOLBAR.addSlide}>+</button>
               </div>
+              {showDragHint && (
+                <div className="slide-panel-drag-hint">
+                  <span>{EDITOR.dragHint}</span>
+                  <button type="button" className="slide-panel-drag-hint-dismiss" onClick={dismissDragHint} aria-label="Fechar">×</button>
+                </div>
+              )}
               <div className="slide-thumbnails">
                 {slides.map((slide, i) => {
                   const title = slide.content?.title || slide.content?.text || 'Slide';
@@ -296,10 +350,18 @@ export default function App() {
                   <span className="slide-thumb-num">{i + 1}</span>
                   <div className="slide-thumb-content">{preview}</div>
                   <div className="slide-thumb-actions" onClick={(e) => e.stopPropagation()}>
-                    <button type="button" className="slide-thumb-btn" onClick={() => moveSlide(i, 'up')} disabled={i === 0} title="Subir" aria-label="Subir slide">↑</button>
-                    <button type="button" className="slide-thumb-btn" onClick={() => moveSlide(i, 'down')} disabled={i === slides.length - 1} title="Descer" aria-label="Descer slide">↓</button>
-                    <button type="button" className="slide-thumb-btn" onClick={() => duplicateSlide(i)} title="Duplicar" aria-label="Duplicar slide">⎘</button>
-                    <button type="button" className="slide-thumb-btn slide-thumb-remove" onClick={() => removeSlide(i)} disabled={slides.length <= 1} title="Remover" aria-label="Remover slide">×</button>
+                    <button type="button" className="slide-thumb-btn" onClick={() => moveSlide(i, 'up')} disabled={i === 0} title={EDITOR.moveUp} aria-label={EDITOR.moveUp}>
+                      <iconify-icon icon="lucide:arrow-up" />
+                    </button>
+                    <button type="button" className="slide-thumb-btn" onClick={() => moveSlide(i, 'down')} disabled={i === slides.length - 1} title={EDITOR.moveDown} aria-label={EDITOR.moveDown}>
+                      <iconify-icon icon="lucide:arrow-down" />
+                    </button>
+                    <button type="button" className="slide-thumb-btn" onClick={() => duplicateSlide(i)} title={EDITOR.duplicate} aria-label={EDITOR.duplicate}>
+                      <iconify-icon icon="lucide:copy" />
+                    </button>
+                    <button type="button" className="slide-thumb-btn slide-thumb-remove" onClick={() => removeSlide(i)} disabled={slides.length <= 1} title={EDITOR.remove} aria-label={EDITOR.remove}>
+                      <iconify-icon icon="lucide:trash-2" />
+                    </button>
                   </div>
                 </div>
               );
@@ -311,24 +373,31 @@ export default function App() {
               <div className="editor-canvas-wrapper" onBlur={syncContentFromEditor}>
                 <div ref={editorRef} className="editor-canvas" data-ratio="16/9" />
               </div>
-              <p className="editor-area__hint">Clique no texto do slide para editar. Altere o layout abaixo se quiser outro tipo de slide.</p>
+              <p className="editor-area__hint">{EDITOR.hint}</p>
               <div className="slide-templates">
-            <span className="templates-label">Layout do slide</span>
-            <div className="template-buttons">
-              {LAYOUT_KEYS.map((key) => (
-                <button
-                  key={key}
-                  type="button"
-                  className={`template-btn ${currentSlide?.layout === key ? 'active' : ''}`}
-                  onClick={() => setSlideLayout(key)}
-                >
-                  {LAYOUTS[key].name}
-                </button>
-              ))}
-            </div>
-            {currentSlide && (
-              <div className="slide-options-row">
-                <label className="slide-options-label">Transição</label>
+                <span className="templates-label">{EDITOR.layoutLabel}</span>
+                <div className="slide-templates-groups">
+                  {LAYOUT_GROUPS.map((group) => (
+                    <div key={group.label} className="template-group">
+                      <span className="template-group__label">{group.label}</span>
+                      <div className="template-buttons">
+                        {group.keys.map((key) => (
+                          <button
+                            key={key}
+                            type="button"
+                            className={`template-btn ${currentSlide?.layout === key ? 'active' : ''}`}
+                            onClick={() => setSlideLayout(key)}
+                          >
+                            {LAYOUTS[key]?.name || key}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {currentSlide && (
+                  <div className="slide-options-row">
+                    <label className="slide-options-label">{EDITOR.transitionLabel}</label>
                 <select
                   className="slide-options-select"
                   value={currentSlide.transition || 'fade'}
@@ -338,7 +407,7 @@ export default function App() {
                     <option key={t.id} value={t.id}>{t.name}</option>
                   ))}
                 </select>
-                <label className="slide-options-label">Animação</label>
+                    <label className="slide-options-label">{EDITOR.animationLabel}</label>
                 <select
                   className="slide-options-select"
                   value={currentSlide.elementAnimation || 'fade'}

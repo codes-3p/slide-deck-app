@@ -1,4 +1,7 @@
-# Chaves e segredos (nunca fazer commit do .env)
+# Build (gerado na VPS com npm run build)
+/build
+
+# Chaves e segredos
 server/.env
 .env
 .env.local

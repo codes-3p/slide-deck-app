@@ -1,48 +1,6 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-:root {
-  /* Surfaces - dark moderno e arrojado */
-  --bg-app: #0a0a0a;
-  --bg-panel: #111111;
-  --bg-slide: #141414;
-  --bg-slide-alt: #1c1c1c;
-  --surface-elevated: #171717;
-  /* Text */
-  --text-primary: #fafafa;
-  --text-secondary: #a3a3a3;
-  --text-muted: #525252;
-  /* Brand - um accent forte, sem roxo */
-  --accent: #0ea5e9;
-  --accent-hover: #38bdf8;
-  --accent-muted: rgba(14, 165, 233, 0.15);
-  /* Borders */
-  --border: #262626;
-  --border-subtle: #1f1f1f;
-  --radius: 10px;
-  --radius-sm: 6px;
-  --radius-lg: 14px;
-  /* Spacing scale (design system) */
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 24px;
-  --space-8: 32px;
-  --space-10: 40px;
-  /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.2);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.25);
-  --shadow-lg: 0 8px 24px rgba(0,0,0,0.35);
-  --shadow-focus: 0 0 0 2px var(--accent-muted);
-  /* Motion */
-  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --duration-fast: 150ms;
-  --duration-normal: 250ms;
-  /* Typography */
-  --font-sans: 'DM Sans', system-ui, sans-serif;
-  --font-serif: 'Instrument Serif', Georgia, serif;
-}
+/* Tokens em design-tokens.css */
 
 body {
   font-family: var(--font-sans);

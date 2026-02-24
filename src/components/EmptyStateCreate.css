@@ -29,7 +29,37 @@
   font-size: 0.95rem;
   color: var(--text-secondary);
   line-height: 1.5;
-  margin: 0 0 28px;
+  margin: 0 0 20px;
+}
+
+.empty-state-create__label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.empty-state-create__title-input {
+  width: 100%;
+  padding: 10px 14px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  background: var(--bg-slide);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 16px;
+  box-sizing: border-box;
+}
+
+.empty-state-create__title-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.empty-state-create__title-input::placeholder {
+  color: var(--text-muted);
 }
 
 .empty-state-create__form {
@@ -156,9 +186,27 @@
 }
 
 .empty-state-create__error {
-  margin: 0;
+  margin: 0 0 8px;
   font-size: 0.9rem;
   color: #f87171;
+}
+
+.empty-state-create__error-wrap {
+  margin-top: 4px;
+}
+
+.empty-state-create__error-retry {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.empty-state-create__error-retry:hover {
+  text-decoration: underline;
 }
 
 .empty-state-create__hint {
