@@ -126,6 +126,13 @@
   border-radius: var(--radius-sm);
   font-size: 0.8rem;
   color: var(--accent);
+  flex-shrink: 0;
+  min-width: 0;
+}
+.slide-panel-drag-hint span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .slide-panel-drag-hint-dismiss {

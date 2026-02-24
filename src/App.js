@@ -332,7 +332,8 @@ export default function App() {
               <div className="slide-thumbnails">
                 {slides.map((slide, i) => {
                   const title = slide.content?.title || slide.content?.text || 'Slide';
-                  const preview = typeof title === 'string' ? title : (slide.content?.left || '').slice(0, 60);
+                  const raw = typeof title === 'string' ? title : (slide.content?.left || '');
+                  const preview = typeof raw === 'string' && raw.length > 80 ? raw.slice(0, 77) + '...' : raw || 'Slide';
                   const isDragging = dragSlideIndex === i;
                   const isDropTarget = dropTargetIndex === i;
                   return (

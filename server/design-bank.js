@@ -152,6 +152,11 @@ const CONTENT_COMPLETENESS = `
 - Inclui 100% dos tópicos, números, frases e blocos que o utilizador listou ou colou. Se há muitos itens, cria mais slides (section + bullet ou vários bullets).
 - Mantém a ordem e a hierarquia que o utilizador sugeriu. Não juntes pontos não relacionados no mesmo slide só para "reduzir" slides.
 - Cada slide deve ter conteúdo concreto (títulos e textos preenchidos com o que foi pedido). Evita placeholders genéricos quando o utilizador já deu o texto.
+
+---- NUNCA SLIDES VAZIOS OU COM UMA FRASE SÓ ----
+- PROIBIDO: slides com apenas um título ou uma única frase. Cada slide deve ter conteúdo RICO e completo.
+- Hero: título + subtítulo preenchidos (2+ linhas). Bullet: título + 3 a 6 itens com texto e ícone cada. Timeline: título + 3+ eventos com year e text. Section: título impactante. Two-column: ambas as colunas com texto. Quote: citação + autor. Stats/big-number: valores e etiquetas preenchidos.
+- Para temas como "primavera", "empresa X", "produto Y": desenvolve o tema em vários slides com conteúdo variado (características, benefícios, dados, citações), não apenas títulos soltos. Apresentações devem parecer profissionais e prontas para apresentar.
 `;
 
 function getDesignBank() {
