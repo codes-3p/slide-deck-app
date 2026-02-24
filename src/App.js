@@ -3,7 +3,7 @@ import { LAYOUTS, DEFAULT_SLIDE, TRANSITIONS, ELEMENT_ANIMATIONS } from './const
 import { TOOLBAR, EDITOR, LAYOUT_GROUPS } from './constants/copy';
 import { renderSlideToHtml, getContentFromEditor } from './utils/slideRender';
 import { downloadPptx } from './utils/exportPptx';
-import { ChatSidebar } from './components/ChatSidebar';
+import ChatSidebar from './components/ChatSidebar';
 import { AnimatedAIChat } from './components/ui/AnimatedAIChat';
 import './App.css';
 
