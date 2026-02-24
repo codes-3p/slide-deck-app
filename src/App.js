@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { LAYOUTS, DEFAULT_SLIDE } from './constants';
-import { renderSlideToHtml } from './utils/slideRender';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { LAYOUTS, DEFAULT_SLIDE, LAYOUT_KEYS } from './constants';
+import { renderSlideToHtml, getContentFromEditor } from './utils/slideRender';
 import { downloadPptx } from './utils/exportPptx';
 import ChatSidebar from './components/ChatSidebar';
 import './App.css';
@@ -18,6 +18,8 @@ export default function App() {
   const [brandColors, setBrandColors] = useState(null);
   const [chatMinimized, setChatMinimized] = useState(true);
   const [presentationOpen, setPresentationOpen] = useState(false);
+  const [dragSlideIndex, setDragSlideIndex] = useState(null);
+  const [dropTargetIndex, setDropTargetIndex] = useState(null);
   const editorRef = useRef(null);
 
   const currentSlide = slides[currentIndex] || slides[0];
@@ -67,16 +69,128 @@ export default function App() {
     setTemplateId(tplId || null);
   };
 
+  const syncContentFromEditor = useCallback(() => {
+    if (!editorRef.current || currentIndex < 0 || currentIndex >= slides.length) return;
+    const slide = slides[currentIndex];
+    const content = getContentFromEditor(editorRef.current, slide);
+    if (!content || Object.keys(content).length === 0) return;
+    setSlides((prev) => {
+      const next = [...prev];
+      next[currentIndex] = { ...next[currentIndex], content };
+      return next;
+    });
+  }, [currentIndex, slides]);
+
   useEffect(() => {
     const slide = slides[currentIndex];
     if (!slide) return;
-    const html = renderSlideToHtml(slide, false, true);
+    const html = renderSlideToHtml(slide, false, false);
     if (editorRef.current) editorRef.current.innerHTML = html;
   }, [currentIndex, slides]);
 
   const openPresentation = () => setPresentationOpen(true);
-
   const closePresentation = () => setPresentationOpen(false);
+
+  const moveSlide = (fromIndex, direction) => {
+    const toIndex = direction === 'up' ? fromIndex - 1 : fromIndex + 1;
+    if (toIndex < 0 || toIndex >= slides.length) return;
+    setSlides((prev) => {
+      const next = [...prev];
+      [next[fromIndex], next[toIndex]] = [next[toIndex], next[fromIndex]];
+      return next;
+    });
+    setCurrentIndex(toIndex);
+  };
+
+  const addSlide = () => {
+    const newSlide = { ...DEFAULT_SLIDE, content: { ...LAYOUTS.title.defaultContent } };
+    setSlides((prev) => {
+      const next = [...prev];
+      next.splice(currentIndex + 1, 0, newSlide);
+      return next;
+    });
+    setCurrentIndex(currentIndex + 1);
+  };
+
+  const duplicateSlide = (index) => {
+    const slide = slides[index];
+    if (!slide) return;
+    setSlides((prev) => {
+      const next = [...prev];
+      next.splice(index + 1, 0, { ...slide, content: { ...(slide.content || {}) } });
+      return next;
+    });
+    setCurrentIndex(index + 1);
+  };
+
+  const removeSlide = (index) => {
+    if (slides.length <= 1) return;
+    setSlides((prev) => prev.filter((_, i) => i !== index));
+    setCurrentIndex((i) => (i >= index && i > 0 ? i - 1 : i));
+  };
+
+  const setSlideLayout = (layout) => {
+    if (!LAYOUTS[layout]) return;
+    setSlides((prev) => {
+      const next = [...prev];
+      const slide = next[currentIndex];
+      next[currentIndex] = { ...slide, layout, content: { ...LAYOUTS[layout].defaultContent, ...(slide.content || {}) } };
+      return next;
+    });
+  };
+
+  const reorderSlides = (fromIndex, toIndex) => {
+    if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0 || fromIndex >= slides.length || toIndex >= slides.length) return;
+    setSlides((prev) => {
+      const next = [...prev];
+      const [removed] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, removed);
+      return next;
+    });
+    setCurrentIndex(toIndex);
+  };
+
+  const handleSlideDragStart = (e, index) => {
+    setDragSlideIndex(index);
+    e.dataTransfer.setData('text/plain', String(index));
+    e.dataTransfer.effectAllowed = 'move';
+  };
+  const handleSlideDragEnd = () => {
+    setDragSlideIndex(null);
+    setDropTargetIndex(null);
+  };
+  const handleSlideDragOver = (e, index) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDropTargetIndex(index);
+  };
+  const handleSlideDragLeave = () => setDropTargetIndex(null);
+  const handleSlideDrop = (e, toIndex) => {
+    e.preventDefault();
+    const fromIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
+    if (!Number.isNaN(fromIndex) && fromIndex !== toIndex) reorderSlides(fromIndex, toIndex);
+    setDragSlideIndex(null);
+    setDropTargetIndex(null);
+  };
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (presentationOpen) return;
+      const target = e.target;
+      const isEditable = target && (target.isContentEditable || target.tagName === 'INPUT' || target.tagName === 'TEXTAREA');
+      if (isEditable) return;
+      if (e.key === 'Delete' && slides.length > 1) {
+        e.preventDefault();
+        removeSlide(currentIndex);
+      } else if (e.ctrlKey || e.metaKey) {
+        if (e.key === 'ArrowUp') { e.preventDefault(); moveSlide(currentIndex, 'up'); }
+        else if (e.key === 'ArrowDown') { e.preventDefault(); moveSlide(currentIndex, 'down'); }
+        else if (e.key === 'd') { e.preventDefault(); duplicateSlide(currentIndex); }
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [presentationOpen, currentIndex, slides.length]);
 
   const presentationSlide = slides[currentIndex];
   const presentationHtml = presentationSlide ? renderSlideToHtml(presentationSlide, true) : '';
@@ -96,6 +210,11 @@ export default function App() {
             SlideDeck
           </h1>
           <span className="deck-title-input deck-title-display">{deckTitle}</span>
+          {templateId && (
+            <span className="toolbar-template-badge" title="Template usado no export PPTX">
+              Template: {templateId}
+            </span>
+          )}
         </div>
         <div className="toolbar-right">
           {chatMinimized && (
@@ -125,19 +244,34 @@ export default function App() {
         <aside className="slide-panel">
           <div className="slide-panel-header">
             <span>Slides</span>
+            <button type="button" className="btn btn-icon slide-panel-add" onClick={addSlide} title="Novo slide">+</button>
           </div>
           <div className="slide-thumbnails">
             {slides.map((slide, i) => {
               const title = slide.content?.title || slide.content?.text || 'Slide';
               const preview = typeof title === 'string' ? title : (slide.content?.left || '').slice(0, 60);
+              const isDragging = dragSlideIndex === i;
+              const isDropTarget = dropTargetIndex === i;
               return (
                 <div
                   key={i}
-                  className={`slide-thumb ${i === currentIndex ? 'active' : ''}`}
+                  className={`slide-thumb ${i === currentIndex ? 'active' : ''} ${isDragging ? 'slide-thumb--dragging' : ''} ${isDropTarget ? 'slide-thumb--drop-target' : ''}`}
+                  draggable
+                  onDragStart={(e) => handleSlideDragStart(e, i)}
+                  onDragEnd={handleSlideDragEnd}
+                  onDragOver={(e) => handleSlideDragOver(e, i)}
+                  onDragLeave={handleSlideDragLeave}
+                  onDrop={(e) => handleSlideDrop(e, i)}
                   onClick={() => setCurrentIndex(i)}
                 >
                   <span className="slide-thumb-num">{i + 1}</span>
                   <div className="slide-thumb-content">{preview}</div>
+                  <div className="slide-thumb-actions" onClick={(e) => e.stopPropagation()}>
+                    <button type="button" className="slide-thumb-btn" onClick={() => moveSlide(i, 'up')} disabled={i === 0} title="Subir">↑</button>
+                    <button type="button" className="slide-thumb-btn" onClick={() => moveSlide(i, 'down')} disabled={i === slides.length - 1} title="Descer">↓</button>
+                    <button type="button" className="slide-thumb-btn" onClick={() => duplicateSlide(i)} title="Duplicar">⎘</button>
+                    <button type="button" className="slide-thumb-btn slide-thumb-remove" onClick={() => removeSlide(i)} disabled={slides.length <= 1} title="Remover">×</button>
+                  </div>
                 </div>
               );
             })}
@@ -145,9 +279,33 @@ export default function App() {
         </aside>
 
         <section className="editor-area">
-          <div className="editor-canvas-wrapper">
-            <div ref={editorRef} className="editor-canvas" data-ratio="16/9" />
-          </div>
+          {slides.length === 0 ? (
+            <div className="editor-empty-state">
+              <p>Nenhum slide.</p>
+              <p>Use <strong>Criar com IA</strong> no chat ou o botão <strong>+</strong> no painel para adicionar.</p>
+            </div>
+          ) : (
+            <>
+              <div className="editor-canvas-wrapper" onBlur={syncContentFromEditor}>
+                <div ref={editorRef} className="editor-canvas" data-ratio="16/9" />
+              </div>
+              <div className="slide-templates">
+                <span className="templates-label">Modelo do slide:</span>
+                <div className="template-buttons">
+                  {LAYOUT_KEYS.map((key) => (
+                    <button
+                      key={key}
+                      type="button"
+                      className={`template-btn ${currentSlide?.layout === key ? 'active' : ''}`}
+                      onClick={() => setSlideLayout(key)}
+                    >
+                      {LAYOUTS[key].name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
         </section>
       </main>
 

@@ -10,8 +10,8 @@ const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const pdf = require('pdf-parse');
-const { OpenAI } = require('openai');
 const { SYSTEM_PROMPT, buildUserMessage } = require('./prompt');
+const { getCompletion, getAvailableProviders, hasOpenAI, hasAnthropic, hasGoogle } = require('./llm');
 const { pptxToPromptContext, parsePptx } = require('./parse-pptx');
 const { generatePptxBuffer, getFileName } = require('./exportPptx');
 const {
@@ -31,11 +31,6 @@ app.use(cors());
 app.use(express.json());
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } }); // 15 MB
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || '',
-  baseURL: process.env.OPENAI_BASE_URL || undefined
-});
 
 // Valida e normaliza slides retornados pela IA
 const LAYOUTS = ['hero', 'title', 'title-subtitle', 'bullet', 'timeline', 'two-column', 'big-number', 'stats-row', 'quote', 'section', 'image-text'];
@@ -166,9 +161,9 @@ app.post('/api/generate', async (req, res, next) => {
     return res.status(400).json({ error: 'Campo "description" é obrigatório.' });
   }
 
-  if (!process.env.OPENAI_API_KEY) {
+  if (!hasOpenAI() && !hasAnthropic() && !hasGoogle()) {
     return res.status(503).json({
-      error: 'API não configurada. Defina OPENAI_API_KEY no ficheiro .env.'
+      error: 'Nenhum provider configurado. Defina OPENAI_API_KEY, ANTHROPIC_API_KEY ou GOOGLE_API_KEY no .env.'
     });
   }
 
@@ -178,30 +173,31 @@ app.post('/api/generate', async (req, res, next) => {
 
     let userContent = userMessage;
     if (attachment.imageBuffer && attachment.imageMimeType) {
-      const base64 = attachment.imageBuffer.toString('base64');
-      const dataUrl = `data:${attachment.imageMimeType};base64,${base64}`;
       userContent = [
-        { type: 'text', text: userMessage + '\n\n[Imagem anexada: descreve o que vês e usa como referência visual para a estrutura ou conteúdo dos slides. Gera o JSON da apresentação com base na descrição e no que vês na imagem.]' },
-        { type: 'image_url', image_url: { url: dataUrl } }
+        { type: 'text', text: userMessage + '\n\n[Imagem anexada: descreve o que vês e usa como referência visual. Gera o JSON da apresentação.]' },
+        { type: 'image_url', image_url: { url: `data:${attachment.imageMimeType};base64,${attachment.imageBuffer.toString('base64')}` } }
       ];
     }
 
     const systemContent = SYSTEM_PROMPT + (await getCatalogForPrompt());
-    const completion = await openai.chat.completions.create({
-      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: systemContent },
-        { role: 'user', content: userContent }
-      ],
-      temperature: 0.7,
-      max_tokens: 4096
+    const provider = req.body?.provider || undefined;
+    const text = await getCompletion({
+      provider,
+      systemContent,
+      userContent: userMessage,
+      imageBuffer: attachment.imageBuffer || undefined,
+      imageMimeType: attachment.imageMimeType || undefined
     });
 
-    const text = completion.choices?.[0]?.message?.content;
-    if (!text) throw new Error('Resposta vazia da IA');
-
     const { deckTitle, slides, brandColors, templateId } = parseSlidesFromResponse(text);
-    res.json({ deckTitle, slides, brandColors: brandColors || undefined, templateId: templateId || undefined });
+    // Se há templates e a IA não devolveu templateId, usar o primeiro template (export template-first)
+    let finalTemplateId = templateId;
+    if (!finalTemplateId) {
+      const { templates } = await getAllTemplates();
+      const local = (templates || []).filter((t) => t.source !== 'google_drive' && t.filename);
+      if (local.length) finalTemplateId = local[0].id;
+    }
+    res.json({ deckTitle, slides, brandColors: brandColors || undefined, templateId: finalTemplateId || undefined });
   } catch (err) {
     console.error('Erro ao gerar apresentação:', err.message);
     if (err.message.includes('JSON')) {
@@ -215,7 +211,11 @@ app.post('/api/generate', async (req, res, next) => {
 });
 
 app.get('/api/health', (_, res) => {
-  res.json({ ok: true, hasKey: !!process.env.OPENAI_API_KEY });
+  res.json({ ok: true, hasKey: hasOpenAI() || hasAnthropic() || hasGoogle() });
+});
+
+app.get('/api/providers', (_, res) => {
+  res.json({ providers: getAvailableProviders() });
 });
 
 app.get('/api/reference-library/catalog', async (_, res) => {
@@ -287,7 +287,8 @@ app.post('/api/export-pptx', express.json(), async (req, res) => {
       }
       const baseDir = tpl.source === 'external' ? process.env.EXTERNAL_TEMPLATES_PATH : getTemplatesDir();
       const templatePath = path.join(baseDir || getTemplatesDir(), tpl.filename);
-      const buffer = await renderWithTemplate({ templatePath, deckTitle, slides });
+      const slideLayouts = Array.isArray(tpl.slideLayouts) ? tpl.slideLayouts : [];
+      const buffer = await renderWithTemplate({ templatePath, deckTitle, slides, slideLayouts });
       const fileName = getFileName(deckTitle);
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
       res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
@@ -311,8 +312,10 @@ app.post('/api/export-pptx', express.json(), async (req, res) => {
   }
 });
 
-// Pasta do frontend (um nível acima de server/)
-const frontendDir = path.join(__dirname, '..');
+// Pasta do frontend: preferir build do React (npm run build) se existir; senão raiz do projeto (index.html vanilla)
+const projectRoot = path.join(__dirname, '..');
+const buildDir = path.join(projectRoot, 'build');
+const frontendDir = fs.existsSync(path.join(buildDir, 'index.html')) ? buildDir : projectRoot;
 
 // Rota raiz: serve index.html
 app.get('/', (_, res) => {

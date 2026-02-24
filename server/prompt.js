@@ -31,14 +31,14 @@ const JSON_SCHEMA = `
 FORMATO DE RESPOSTA (APENAS este JSON, sem texto antes ou depois):
 {
   "deckTitle": "Título da apresentação",
-  "templateId": "id-do-template-opcional",
+  "templateId": "id-do-template-obrigatório-se-houver-lista-acima",
   "brandColors": { "primary": "#hex", "secondary": "#hex" },
   "slides": [
     { "layout": "hero", "content": { ... } },
     ...
   ]
 }
-- "templateId" é OPCIONAL. Se o banco de referências tiver templates PPTX listados acima, podes indicar o id do template que melhor se adequa (corporate, pitch, etc.). O backend usará esse template como referência.
+- "templateId" é OBRIGATÓRIO quando há templates no banco (lista acima). Usa o id do template que melhor se adequa ao tema. O export PPTX preenche esse template real (animações e efeitos preservados).
 - "brandColors" é OPCIONAL. Inclui apenas se o utilizador ou o manual de identidade anexado especificar cores (extrai hex do texto). Usa essas cores como referência em todos os slides.
 - Cada objeto em "slides" tem "layout" e "content" com os campos exatos do layout.
 `;

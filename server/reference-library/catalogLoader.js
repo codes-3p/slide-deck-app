@@ -199,7 +199,7 @@ A ferramenta tem um banco de referências com templates em PPTX (internos, pasta
 TEMPLATES DISPONÍVEIS (usa o id para referenciar):
 ${lines.join('\n')}
 
-Ao gerar o JSON, inclui "templateId": "id-do-template" quando fizer sentido. Escolhe o template adequado ao tema consoante as tags e a descrição.
+Ao gerar o JSON, é OBRIGATÓRIO incluir "templateId" com um dos ids listados acima. Escolhe o template que melhor se adequa ao tema e ao pedido do utilizador (usa as tags e a descrição). O export em PPTX usará esse template para manter animações, efeitos e design profissional.
 `;
 }
 

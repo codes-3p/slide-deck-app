@@ -135,6 +135,33 @@
   background: var(--bg-panel);
 }
 
+.chat-sidebar__provider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.chat-sidebar__provider label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.chat-sidebar__provider-select {
+  flex: 1;
+  padding: 6px 10px;
+  background: var(--bg-slide);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+}
+
+.chat-sidebar__provider-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
 .chat-sidebar__attachment {
   display: flex;
   align-items: center;

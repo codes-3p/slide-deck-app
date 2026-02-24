@@ -17,8 +17,23 @@ export default function ChatSidebar({ onPresentationGenerated, minimized, onTogg
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [attachment, setAttachment] = useState(null);
+  const [providers, setProviders] = useState([]);
+  const [provider, setProvider] = useState('openai');
   const fileInputRef = useRef(null);
   const historyEndRef = useRef(null);
+
+  useEffect(() => {
+    fetch((API_BASE || '') + '/api/providers')
+      .then((r) => r.json())
+      .then((d) => {
+        if (Array.isArray(d.providers) && d.providers.length) {
+          setProviders(d.providers);
+          const first = d.providers.find((p) => p.id === 'openai') || d.providers[0];
+          if (first) setProvider(first.id);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     historyEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -39,6 +54,7 @@ export default function ChatSidebar({ onPresentationGenerated, minimized, onTogg
       const formData = new FormData();
       formData.append('description', text || 'Gere uma apresentação com base no arquivo anexado.');
       formData.append('deckTitle', 'Minha Apresentação');
+      formData.append('provider', provider);
       if (attachment) formData.append('file', attachment);
       setAttachment(null);
 
@@ -114,6 +130,16 @@ export default function ChatSidebar({ onPresentationGenerated, minimized, onTogg
         <div ref={historyEndRef} />
       </div>
       <div className="chat-sidebar__input-area">
+        {providers.length > 1 && (
+          <div className="chat-sidebar__provider">
+            <label htmlFor="chat-provider">Modelo:</label>
+            <select id="chat-provider" className="chat-sidebar__provider-select" value={provider} onChange={(e) => setProvider(e.target.value)}>
+              {providers.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
         {attachment && (
           <div className="chat-sidebar__attachment">
             <span>{attachment.name}</span>

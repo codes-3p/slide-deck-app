@@ -50,16 +50,18 @@ function httpRequestJson(urlString, body) {
  * @param {string} params.templatePath - Caminho absoluto para o template PPTX.
  * @param {string} params.deckTitle
  * @param {Array} params.slides
+ * @param {Array} [params.slideLayouts] - [{ index, type }] do catálogo para mapear layout → slide do template
  * @returns {Promise<Buffer>} buffer PPTX final
  */
-async function renderWithTemplate({ templatePath, deckTitle, slides }) {
+async function renderWithTemplate({ templatePath, deckTitle, slides, slideLayouts }) {
   if (!templatePath) {
     throw new Error('templatePath em falta para renderização PPTX.');
   }
   const body = {
     templatePath,
     deckTitle: deckTitle || '',
-    slides: slides || []
+    slides: slides || [],
+    slideLayouts: Array.isArray(slideLayouts) ? slideLayouts : []
   };
   const url = `${RENDERER_URL}/render`;
   const buffer = await httpRequestJson(url, body);

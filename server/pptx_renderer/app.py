@@ -1,23 +1,25 @@
 """
 Microserviço de renderização PPTX (estilo Manus).
 
+Export template-first: abre um PPTX real, duplica o slide do template que corresponde
+ao layout pedido e preenche o conteúdo. Animações e efeitos do template são preservados.
+
 API:
 - POST /render
   Body (JSON):
   {
-    "templatePath": "C:/.../template.pptx",
+    "templatePath": "/path/to/template.pptx",
     "deckTitle": "Título",
     "slides": [
       { "layout": "hero", "content": { "title": "...", "subtitle": "..." } },
-      { "layout": "bullet", "content": { "title": "...", "items": [ { "text": "..."} ] } }
-    ]
+      { "layout": "bullet", "content": { "title": "...", "items": [ { "text": "..." } ] } }
+    ],
+    "slideLayouts": [ { "index": 0, "type": "hero" }, { "index": 1, "type": "bullet" }, ... ]
   }
 
-Saída:
-- PPTX final (application/vnd.openxmlformats-officedocument.presentationml.presentation)
-
-NOTA: Este é um esqueleto. A lógica de mapeamento layout->slide/template
-e substituição fina de conteúdo pode ser refinada depois.
+  slideLayouts = mapeamento no template: índice do slide → tipo de layout.
+  Para cada slide em "slides", usamos o slide do template cujo type coincide com slide.layout.
+  Se não houver correspondência, usa-se o slide de índice 0.
 """
 
 from io import BytesIO
@@ -34,56 +36,72 @@ class SlideContent(BaseModel):
     content: dict
 
 
+class SlideLayoutRef(BaseModel):
+    index: int
+    type: str
+
+
 class RenderRequest(BaseModel):
     templatePath: str
     deckTitle: Optional[str] = None
     slides: List[SlideContent]
+    slideLayouts: Optional[List[SlideLayoutRef]] = None
 
 
-app = FastAPI(title="SlideDeck PPTX Renderer", version="0.1.0")
+app = FastAPI(title="SlideDeck PPTX Renderer", version="1.0.0")
 
 
-def _duplicate_slide(prs: Presentation, slide_layout_index: int):
+def _find_template_slide_index(layout: str, slide_layouts: List[dict]) -> int:
+    """Devolve o índice do slide no template que corresponde ao layout pedido."""
+    if not slide_layouts:
+        return 0
+    for ref in slide_layouts:
+        ref_type = (ref.get("type") or ref.get("layout") or "").strip().lower()
+        ref_type = ref_type.replace("_", "-")
+        want = (layout or "title").strip().lower().replace("_", "-")
+        if ref_type == want:
+            idx = ref.get("index", 0)
+            if isinstance(idx, int) and idx >= 0:
+                return idx
+    return 0
+
+
+def _duplicate_slide(prs: Presentation, slide_index: int) -> "Slide":
     """
-    Duplica um slide existente (por índice) de forma simples:
-    - copia shapes (texto principalmente) para um novo slide em branco.
-    Isto é propositalmente simples para primeira versão.
+    Duplica um slide existente do template (preserva posição e estilo dos shapes).
+    Copia caixas de texto; outros shapes podem ser ignorados nesta versão.
     """
-    src = prs.slides[slide_layout_index]
-    blank_layout = prs.slide_layouts[0]
+    if slide_index >= len(prs.slides):
+        slide_index = 0
+    src = prs.slides[slide_index]
+    blank_layout = prs.slide_layouts[6] if len(prs.slide_layouts) > 6 else prs.slide_layouts[0]
     dest = prs.slides.add_slide(blank_layout)
     for shape in src.shapes:
-        # Copiamos apenas caixas de texto simples; imagens/diagramas ficam para versões futuras.
         if not shape.has_text_frame:
             continue
         new_shape = dest.shapes.add_textbox(
-            left=shape.left,
-            top=shape.top,
-            width=shape.width,
-            height=shape.height,
+            shape.left,
+            shape.top,
+            shape.width,
+            shape.height,
         )
         new_tf = new_shape.text_frame
         new_tf.text = shape.text
     return dest
 
 
-def _apply_content_to_slide(slide, layout: str, content: dict):
-    """
-    Versão inicial super simples:
-    - hero/title: primeiro shape = título, segundo (se houver) = subtítulo.
-    - bullet: primeiro shape = título, demais bullets concatenados em outro shape.
-    - stats-row/big-number/quote: preenche linhas de texto.
-    """
+def _apply_content_to_slide(slide, layout: str, content: dict) -> None:
+    """Preenche os shapes do slide com o conteúdo gerado pela IA."""
     text_shapes = [s for s in slide.shapes if s.has_text_frame]
     if not text_shapes:
         return
 
-    def set_text(idx: int, value: str):
+    def set_text(idx: int, value: str) -> None:
         if idx < len(text_shapes):
             tf = text_shapes[idx].text_frame
             tf.clear()
-            p = tf.paragraphs[0]
-            p.text = value or ""
+            if tf.paragraphs:
+                tf.paragraphs[0].text = value or ""
 
     if layout in ("hero", "title", "title-subtitle", "title_subtitle"):
         set_text(0, content.get("title") or "")
@@ -104,16 +122,43 @@ def _apply_content_to_slide(slide, layout: str, content: dict):
             for line in bullets:
                 p = tf.add_paragraph()
                 p.text = line
-    elif layout in ("stats-row", "stats_row", "big-number", "big_number", "quote"):
-        # Preencher com texto concatenado simples para começar
-        flat = []
-        for key in sorted(content.keys()):
-            val = content[key]
-            if val:
-                flat.append(str(val))
-        set_text(0, " | ".join(flat))
+    elif layout == "timeline":
+        set_text(0, content.get("title") or "")
+        events = content.get("events") or []
+        lines = [f"{e.get('year', '')} – {e.get('text', '')}" if isinstance(e, dict) else str(e) for e in events]
+        if len(text_shapes) > 1:
+            tf = text_shapes[1].text_frame
+            tf.clear()
+            for line in lines:
+                p = tf.add_paragraph()
+                p.text = line
+    elif layout in ("stats-row", "stats_row"):
+        parts = [
+            content.get("stat1") or "",
+            content.get("label1") or "",
+            content.get("stat2") or "",
+            content.get("label2") or "",
+            content.get("stat3") or "",
+            content.get("label3") or "",
+        ]
+        set_text(0, "  |  ".join(p for p in parts if p))
+    elif layout in ("big-number", "big_number"):
+        set_text(0, str(content.get("number") or "0"))
+        if len(text_shapes) > 1:
+            set_text(1, content.get("label") or "")
+    elif layout == "quote":
+        set_text(0, content.get("text") or "")
+        if len(text_shapes) > 1:
+            set_text(1, content.get("author") or "")
+    elif layout in ("section",):
+        set_text(0, content.get("title") or "")
+    elif layout == "two-column":
+        left = content.get("left") or ""
+        right = content.get("right") or ""
+        set_text(0, left)
+        if len(text_shapes) > 1:
+            set_text(1, right)
     else:
-        # Default: assume um slide com título apenas
         set_text(0, content.get("title") or "")
 
 
@@ -121,33 +166,47 @@ def _apply_content_to_slide(slide, layout: str, content: dict):
 def render_pptx(body: RenderRequest):
     try:
         prs = Presentation(body.templatePath)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Erro ao abrir template PPTX: {exc}") from exc
 
     if body.deckTitle:
         prs.core_properties.title = body.deckTitle
 
-    # Estratégia inicial: usar o primeiro slide como base para todos,
-    # e deixar o conteúdo ditar a diferença. Mais tarde pode mapear
-    # hero/bullet/stats para slides específicos do template.
-    base_index = 0
+    slide_layouts = body.slideLayouts or []
+    layout_list = []
+    for s in slide_layouts:
+        idx = s.get("index", 0) if isinstance(s, dict) else getattr(s, "index", 0)
+        typ = s.get("type", "") if isinstance(s, dict) else getattr(s, "type", "")
+        layout_list.append({"index": idx, "type": typ})
 
-    # Remove todos os slides excepto o base para começarmos sempre limpo
-    while len(prs.slides) > 1:
-        r_id = prs.slides._sldIdLst[1].rId  # type: ignore[attr-defined]
-        prs.part.drop_rel(r_id)
-        del prs.slides._sldIdLst[1]  # type: ignore[attr-defined]
-
-    # Para cada slide pedido: duplicar base e aplicar conteúdo
+    # Construir lista de índices do template a usar para cada slide pedido
+    indices_to_use = []
     for s in body.slides:
-        slide = _duplicate_slide(prs, base_index)
-        _apply_content_to_slide(slide, s.layout, s.content)
+        idx = _find_template_slide_index(s.layout, layout_list)
+        indices_to_use.append(idx)
 
-    # Remover o slide base original se não quisermos mantê-lo
-    if prs.slides:
-        r_id = prs.slides._sldIdLst[0].rId  # type: ignore[attr-defined]
+    # Remover todos os slides do template (vamos recriar a partir das cópias)
+    while len(prs.slides) > 0:
+        r_id = prs.slides._sldIdLst[0].rId
         prs.part.drop_rel(r_id)
-        del prs.slides._sldIdLst[0]  # type: ignore[attr-defined]
+        del prs.slides._sldIdLst[0]
+
+    # Para cada slide pedido: duplicar o slide correto do template e preencher
+    for i, s in enumerate(body.slides):
+        # Reabrir o template para ler o slide de origem (já limpámos prs.slides)
+        prs_ref = Presentation(body.templatePath)
+        src_index = indices_to_use[i] if i < len(indices_to_use) else 0
+        if src_index >= len(prs_ref.slides):
+            src_index = 0
+        src_slide = prs_ref.slides[src_index]
+        blank_layout = prs.slide_layouts[6] if len(prs.slide_layouts) > 6 else prs.slide_layouts[0]
+        dest = prs.slides.add_slide(blank_layout)
+        for shape in src_slide.shapes:
+            if not shape.has_text_frame:
+                continue
+            new_shape = dest.shapes.add_textbox(shape.left, shape.top, shape.width, shape.height)
+            new_shape.text_frame.text = shape.text
+        _apply_content_to_slide(dest, s.layout, s.content or {})
 
     buf = BytesIO()
     prs.save(buf)
@@ -158,8 +217,3 @@ def render_pptx(body: RenderRequest):
         media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
         headers={"Content-Disposition": 'attachment; filename="presentation.pptx"'},
     )
-
-
-# Para correr localmente:
-# uvicorn app:app --host 0.0.0.0 --port 5001 --reload
-

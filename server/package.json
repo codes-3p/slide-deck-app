@@ -16,5 +16,9 @@
     "openai": "^4.20.0",
     "pdf-parse": "^1.1.4",
     "pptxgenjs": "^4.0.1"
+  },
+  "optionalDependencies": {
+    "@anthropic-ai/sdk": "^0.32.0",
+    "@google/generative-ai": "^0.21.0"
   }
 }
