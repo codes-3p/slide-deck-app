@@ -7,7 +7,7 @@ services:
     volumes:
       - /var/www/slide-deck-app:/app
     env_file:
-      - server/.env
+      - ../server/.env
     environment:
       - NODE_ENV=production
       - PORT=3788
