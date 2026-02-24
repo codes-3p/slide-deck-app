@@ -11,7 +11,7 @@ const cors = require('cors');
 const multer = require('multer');
 const pdf = require('pdf-parse');
 const { SYSTEM_PROMPT, buildUserMessage } = require('./prompt');
-const { getCompletion, getAvailableProviders, hasOpenAI, hasAnthropic, hasGoogle } = require('./llm');
+const { getCompletion, getAvailableProviders, hasOpenAI, hasOpenRouter, hasAnthropic, hasGoogle } = require('./llm');
 const { pptxToPromptContext, parsePptx } = require('./parse-pptx');
 const { generatePptxBuffer, getFileName } = require('./exportPptx');
 const {
@@ -161,9 +161,9 @@ app.post('/api/generate', async (req, res, next) => {
     return res.status(400).json({ error: 'Campo "description" é obrigatório.' });
   }
 
-  if (!hasOpenAI() && !hasAnthropic() && !hasGoogle()) {
+  if (!hasOpenAI() && !hasOpenRouter() && !hasAnthropic() && !hasGoogle()) {
     return res.status(503).json({
-      error: 'Nenhum provider configurado. Defina OPENAI_API_KEY, ANTHROPIC_API_KEY ou GOOGLE_API_KEY no .env.'
+      error: 'Nenhum provider configurado. Defina OPENAI_API_KEY, OPENROUTER_API_KEY, ANTHROPIC_API_KEY ou GOOGLE_API_KEY no .env.'
     });
   }
 
@@ -211,7 +211,7 @@ app.post('/api/generate', async (req, res, next) => {
 });
 
 app.get('/api/health', (_, res) => {
-  res.json({ ok: true, hasKey: hasOpenAI() || hasAnthropic() || hasGoogle() });
+  res.json({ ok: true, hasKey: hasOpenAI() || hasOpenRouter() || hasAnthropic() || hasGoogle() });
 });
 
 app.get('/api/providers', (_, res) => {

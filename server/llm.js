@@ -1,16 +1,22 @@
 /**
- * Abstração multi-LLM: OpenAI, OpenRouter/Ollama, Anthropic Claude, Google Gemini.
+ * Abstração multi-LLM: OpenAI, OpenRouter (incl. openrouter/free), Ollama, Anthropic Claude, Google Gemini.
  * Cada provider recebe systemContent, userContent e opcionalmente image (buffer + mime).
  * Devolve o texto da resposta.
  */
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
 const OPENAI_BASE_URL = process.env.OPENAI_BASE_URL || undefined;
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
+const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'openrouter/free';
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || '';
 
 function hasOpenAI() {
   return !!OPENAI_API_KEY;
+}
+
+function hasOpenRouter() {
+  return !!OPENROUTER_API_KEY;
 }
 
 function hasAnthropic() {
@@ -23,8 +29,8 @@ function hasGoogle() {
 
 /**
  * Lista os providers configurados (com chave definida).
- * OpenRouter: OPENAI_BASE_URL com openrouter.ai + OPENAI_API_KEY (chave OpenRouter).
- * Ollama: OPENAI_BASE_URL apontando para instância local (ex.: http://localhost:11434/v1).
+ * OpenRouter dedicado: OPENROUTER_API_KEY + OPENROUTER_MODEL (default openrouter/free).
+ * OpenAI também pode usar OPENAI_BASE_URL=openrouter.ai para rotear por OpenRouter.
  */
 function getAvailableProviders() {
   const list = [];
@@ -39,6 +45,9 @@ function getAvailableProviders() {
       list.push({ id: 'ollama', name: 'Ollama', model: OPENAI_MODEL });
     }
   }
+  if (hasOpenRouter()) {
+    list.push({ id: 'openrouter', name: 'OpenRouter (free)', model: OPENROUTER_MODEL });
+  }
   if (hasAnthropic()) list.push({ id: 'anthropic', name: 'Anthropic (Claude)' });
   if (hasGoogle()) list.push({ id: 'google', name: 'Google (Gemini)' });
   if (list.length === 0) list.push({ id: 'openai', name: 'OpenAI (não configurado)', model: '' });
@@ -49,13 +58,16 @@ function getAvailableProviders() {
  * Chama o provider escolhido e devolve o texto da resposta.
  */
 async function getCompletion({ provider, systemContent, userContent, imageBuffer, imageMimeType }) {
-  const effectiveProvider = provider || (hasOpenAI() ? 'openai' : (hasAnthropic() ? 'anthropic' : (hasGoogle() ? 'google' : 'openai')));
+  const effectiveProvider = provider || (hasOpenAI() ? 'openai' : (hasOpenRouter() ? 'openrouter' : (hasAnthropic() ? 'anthropic' : (hasGoogle() ? 'google' : 'openai'))));
 
   if (effectiveProvider === 'anthropic' && hasAnthropic()) {
     return runAnthropic(systemContent, userContent, imageBuffer, imageMimeType);
   }
   if (effectiveProvider === 'google' && hasGoogle()) {
     return runGoogle(systemContent, userContent, imageBuffer, imageMimeType);
+  }
+  if (effectiveProvider === 'openrouter' && hasOpenRouter()) {
+    return runOpenRouter(systemContent, userContent, imageBuffer, imageMimeType);
   }
 
   return runOpenAI(systemContent, userContent, imageBuffer, imageMimeType);
@@ -80,6 +92,40 @@ async function runOpenAI(systemContent, userContent, imageBuffer, imageMimeType)
 
   const completion = await openai.chat.completions.create({
     model: OPENAI_MODEL,
+    messages: [
+      { role: 'system', content: systemContent },
+      { role: 'user', content: userMsg }
+    ],
+    temperature: 0.7,
+    max_tokens: 4096
+  });
+
+  const text = completion.choices?.[0]?.message?.content;
+  if (!text) throw new Error('Resposta vazia da IA');
+  return text;
+}
+
+const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
+
+async function runOpenRouter(systemContent, userContent, imageBuffer, imageMimeType) {
+  const { OpenAI } = require('openai');
+  const openai = new OpenAI({
+    apiKey: OPENROUTER_API_KEY,
+    baseURL: OPENROUTER_BASE_URL
+  });
+
+  let userMsg = userContent;
+  if (imageBuffer && imageMimeType) {
+    const base64 = imageBuffer.toString('base64');
+    const dataUrl = `data:${imageMimeType};base64,${base64}`;
+    userMsg = [
+      { type: 'text', text: (typeof userContent === 'string' ? userContent : '') + '\n\n[Imagem anexada: descreve e usa como referência. Gera o JSON da apresentação.]' },
+      { type: 'image_url', image_url: { url: dataUrl } }
+    ];
+  }
+
+  const completion = await openai.chat.completions.create({
+    model: OPENROUTER_MODEL,
     messages: [
       { role: 'system', content: systemContent },
       { role: 'user', content: userMsg }
@@ -169,6 +215,7 @@ module.exports = {
   getCompletion,
   getAvailableProviders,
   hasOpenAI,
+  hasOpenRouter,
   hasAnthropic,
   hasGoogle
 };

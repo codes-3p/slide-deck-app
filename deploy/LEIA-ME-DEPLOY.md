@@ -3,7 +3,10 @@
 ## Checklist antes de subir
 
 - [ ] Código no GitHub (push das alterações)
-- [ ] Na VPS: `OPENAI_API_KEY` (ou OpenRouter/Anthropic/Google) em `server/.env`
+- [ ] Na VPS: em `server/.env` definir pelo menos um provider de IA:
+  - `OPENAI_API_KEY` (OpenAI ou OpenRouter se usar OPENAI_BASE_URL)
+  - **`OPENROUTER_API_KEY`** — para modelo gratuito **OpenRouter (free)**; modelo: `OPENROUTER_MODEL=openrouter/free`
+  - `ANTHROPIC_API_KEY` e/ou `GOOGLE_API_KEY`
 - [ ] DNS: `slides.rpce.com.br` → `207.180.229.32`
 - [ ] (Opcional) Motor PPTX: subir `server/pptx_renderer` e definir `PPTX_RENDERER_URL` no `.env` para export com templates
 
@@ -59,10 +62,21 @@ cd /var/www/slide-deck-app && git pull && docker service update --force slide_sl
 
 ## Chave OpenAI (IA)
 
-O ficheiro `/var/www/slide-deck-app/server/.env` na VPS deve ter `OPENAI_API_KEY=sk-...` para a funcionalidade "Criar com IA" funcionar. Editar na VPS:
+O ficheiro `/var/www/slide-deck-app/server/.env` na VPS deve ter pelo menos uma chave de IA para "Criar com IA" funcionar. Editar na VPS:
 
 ```bash
 nano /var/www/slide-deck-app/server/.env
 ```
+
+Exemplo com **OpenRouter (modelo gratuito)**:
+
+```env
+OPENROUTER_API_KEY=sk-or-v1-xxxxxxxx
+OPENROUTER_MODEL=openrouter/free
+```
+
+Obter chave em: https://openrouter.ai/keys — o modelo `openrouter/free` escolhe automaticamente modelos gratuitos na OpenRouter.
+
+Outros providers (opcional): `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`.
 
 Depois: `docker service update --force slide_slide-deck`.
