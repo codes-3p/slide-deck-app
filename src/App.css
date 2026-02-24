@@ -10,183 +10,16 @@
   flex-direction: column;
 }
 
-/* ===== Layout estilo GrapesJS: 3 colunas ===== */
-.workspace-gjs {
-  display: flex;
-  flex: 1;
-  height: calc(100vh - 56px);
-  min-height: 0;
-}
-
-.editor-panel {
-  display: flex;
-  flex-direction: column;
-  background: var(--bg-panel);
-  border-right: 1px solid var(--border);
-  overflow: hidden;
-  flex-shrink: 0;
-}
-
-.editor-panel-left {
-  width: 280px;
-}
-
-.editor-panel-right {
-  width: 260px;
-  border-right: none;
-  border-left: 1px solid var(--border);
-}
-
-.panel-section {
-  border-bottom: 1px solid var(--border-subtle, var(--border));
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.panel-section:last-child {
-  border-bottom: none;
-}
-
-.panel-section--layers {
-  flex: 1;
-  min-height: 120px;
-}
-
-.panel-section__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 12px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
-  background: var(--bg-slide-alt, var(--bg-app));
-}
-
-.panel-section__empty {
-  padding: 16px 12px;
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  margin: 0;
-}
-
-/* Blocos (grid tipo GrapesJS) */
-.blocks-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-  padding: 12px;
-}
-
-.block-card {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  padding: 8px 10px;
-  font-size: 0.8rem;
-  font-family: inherit;
-  font-weight: 500;
-  color: var(--text-secondary);
-  background: var(--bg-slide);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: background var(--duration-fast), border-color var(--duration-fast), color var(--duration-fast);
-  text-align: center;
-}
-
-.block-card:hover {
-  background: var(--accent-muted);
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.block-card__label {
-  line-height: 1.2;
-}
-
-/* Camadas: reutiliza slide-thumbnails */
-.workspace-gjs .slide-thumbnails {
-  padding: 10px;
-  gap: 8px;
-}
-
-.workspace-gjs .panel-section__header .slide-panel-add {
-  margin-left: auto;
-}
-
-/* Área central: só o canvas */
-.editor-canvas-area {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  overflow: auto;
-  min-width: 0;
-  background: var(--bg-app);
-}
-
-/* Painel direito: propriedades */
-.properties-body {
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.property-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.property-label {
-  font-size: 0.72rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-muted);
-}
-
-.property-select {
-  padding: 8px 10px;
-  font-size: 0.85rem;
-  font-family: inherit;
-  background: var(--bg-slide);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  color: var(--text-primary);
-  cursor: pointer;
-}
-
-.property-select:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-
-.template-buttons--vertical {
-  flex-direction: column;
-  display: flex;
-  gap: 6px;
-}
-
-.template-buttons--vertical .template-btn {
-  justify-content: flex-start;
-  text-align: left;
-}
-
 .workspace {
   min-width: 0;
   display: flex;
-  flex-direction: column;
   flex: 1;
   height: calc(100vh - 56px);
+}
+
+/* Estado vazio: área central ocupa tudo */
+.app:not(.app--has-slides) .workspace {
+  padding: 0;
 }
 
 /* Toolbar: barra de app premium */
@@ -221,6 +54,13 @@
 
 .app .editor-canvas {
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.editor-area__hint {
+  margin: 12px 0 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-align: center;
 }
 
 /* Miniaturas: hover e ativo refinados */
@@ -296,13 +136,6 @@
   margin-left: 12px;
 }
 
-.toolbar-hint {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  margin-left: 12px;
-  font-weight: 400;
-}
-
 /* Botões de modelo: mais respiro e feedback */
 .app .template-buttons {
   gap: var(--space-2);
@@ -365,6 +198,36 @@
 .app .templates-label {
   font-weight: 500;
   color: var(--text-secondary);
+}
+
+.slide-options-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.slide-options-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.slide-options-select {
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.slide-options-select:focus {
+  outline: none;
+  border-color: var(--accent);
 }
 
 /* Logo sem emoji: marca geométrica */
