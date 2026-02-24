@@ -90,7 +90,7 @@ export function AnimatedAIChat({ onCreated }) {
   const fileInputRef = useRef(null);
 
   useEffect(() => {
-    fetch((API_BASE || '') + '/api/providers')
+    fetch((API_BASE || '') + '/api/providers', { cache: 'no-store' })
       .then((r) => r.json())
       .then((d) => {
         if (Array.isArray(d?.providers) && d.providers.length) {
@@ -379,7 +379,7 @@ export function AnimatedAIChat({ onCreated }) {
                 >
                   <Command size={16} />
                 </button>
-                {providers.length > 1 && (
+                {providers.length >= 1 && (
                   <select
                     className="animated-chat__select"
                     value={provider}

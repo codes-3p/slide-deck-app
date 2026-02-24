@@ -215,6 +215,7 @@ app.get('/api/health', (_, res) => {
 });
 
 app.get('/api/providers', (_, res) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
   res.json({ providers: getAvailableProviders() });
 });
 
