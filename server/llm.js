@@ -28,30 +28,41 @@ function hasGoogle() {
 }
 
 /**
- * Lista os providers configurados (com chave definida).
- * Cada provider tem id único para evitar duplicados no select.
- * OpenRouter dedicado: OPENROUTER_API_KEY + OPENROUTER_MODEL (default openrouter/free).
+ * Lista os providers configurados, mas devolve APENAS UM provider "ativo".
+ * A prioridade é: OpenAI > OpenRouter > Anthropic > Google > Ollama.
+ * Isto evita UI confusa com vários modelos ao mesmo tempo.
  */
 function getAvailableProviders() {
-  const list = [];
+  const candidates = [];
   const baseUrl = (OPENAI_BASE_URL || '').toLowerCase();
 
   if (hasOpenAI()) {
     if (!OPENAI_BASE_URL) {
-      list.push({ id: 'openai', name: 'OpenAI (GPT)', model: OPENAI_MODEL });
+      candidates.push({ id: 'openai', name: 'OpenAI (GPT)', model: OPENAI_MODEL });
     } else if (baseUrl.includes('openrouter')) {
-      list.push({ id: 'openrouter-custom', name: 'OpenRouter', model: OPENAI_MODEL });
+      candidates.push({ id: 'openrouter-custom', name: 'OpenRouter', model: OPENAI_MODEL });
     } else {
-      list.push({ id: 'ollama', name: 'Ollama', model: OPENAI_MODEL });
+      candidates.push({ id: 'ollama', name: 'Ollama', model: OPENAI_MODEL });
     }
   }
   if (hasOpenRouter()) {
-    list.push({ id: 'openrouter', name: 'OpenRouter (free)', model: OPENROUTER_MODEL });
+    candidates.push({ id: 'openrouter', name: 'OpenRouter (free)', model: OPENROUTER_MODEL });
   }
-  if (hasAnthropic()) list.push({ id: 'anthropic', name: 'Anthropic (Claude)', model: process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet' });
-  if (hasGoogle()) list.push({ id: 'google', name: 'Google (Gemini)', model: process.env.GOOGLE_MODEL || 'gemini-1.5-flash' });
-  if (list.length === 0) list.push({ id: 'openai', name: 'OpenAI (não configurado)', model: '' });
-  return list;
+  if (hasAnthropic()) {
+    candidates.push({ id: 'anthropic', name: 'Anthropic (Claude)', model: process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet' });
+  }
+  if (hasGoogle()) {
+    candidates.push({ id: 'google', name: 'Google (Gemini)', model: process.env.GOOGLE_MODEL || 'gemini-1.5-flash' });
+  }
+
+  if (candidates.length === 0) {
+    return [{ id: 'openai', name: 'OpenAI (não configurado)', model: '' }];
+  }
+
+  // Se houver vários configurados, escolhe só um segundo uma prioridade fixa
+  const priority = ['openai', 'openrouter', 'openrouter-custom', 'anthropic', 'google', 'ollama'];
+  const primary = candidates.find((p) => priority.includes(p.id)) || candidates[0];
+  return [primary];
 }
 
 /**
