@@ -29,8 +29,8 @@ function hasGoogle() {
 
 /**
  * Lista os providers configurados (com chave definida).
+ * Cada provider tem id único para evitar duplicados no select.
  * OpenRouter dedicado: OPENROUTER_API_KEY + OPENROUTER_MODEL (default openrouter/free).
- * OpenAI também pode usar OPENAI_BASE_URL=openrouter.ai para rotear por OpenRouter.
  */
 function getAvailableProviders() {
   const list = [];
@@ -40,7 +40,7 @@ function getAvailableProviders() {
     if (!OPENAI_BASE_URL) {
       list.push({ id: 'openai', name: 'OpenAI (GPT)', model: OPENAI_MODEL });
     } else if (baseUrl.includes('openrouter')) {
-      list.push({ id: 'openrouter', name: 'OpenRouter', model: OPENAI_MODEL });
+      list.push({ id: 'openrouter-custom', name: 'OpenRouter', model: OPENAI_MODEL });
     } else {
       list.push({ id: 'ollama', name: 'Ollama', model: OPENAI_MODEL });
     }
@@ -48,8 +48,8 @@ function getAvailableProviders() {
   if (hasOpenRouter()) {
     list.push({ id: 'openrouter', name: 'OpenRouter (free)', model: OPENROUTER_MODEL });
   }
-  if (hasAnthropic()) list.push({ id: 'anthropic', name: 'Anthropic (Claude)' });
-  if (hasGoogle()) list.push({ id: 'google', name: 'Google (Gemini)' });
+  if (hasAnthropic()) list.push({ id: 'anthropic', name: 'Anthropic (Claude)', model: process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet' });
+  if (hasGoogle()) list.push({ id: 'google', name: 'Google (Gemini)', model: process.env.GOOGLE_MODEL || 'gemini-1.5-flash' });
   if (list.length === 0) list.push({ id: 'openai', name: 'OpenAI (não configurado)', model: '' });
   return list;
 }
@@ -68,6 +68,9 @@ async function getCompletion({ provider, systemContent, userContent, imageBuffer
   }
   if (effectiveProvider === 'openrouter' && hasOpenRouter()) {
     return runOpenRouter(systemContent, userContent, imageBuffer, imageMimeType);
+  }
+  if (effectiveProvider === 'openrouter-custom' && hasOpenAI()) {
+    return runOpenAI(systemContent, userContent, imageBuffer, imageMimeType);
   }
 
   return runOpenAI(systemContent, userContent, imageBuffer, imageMimeType);

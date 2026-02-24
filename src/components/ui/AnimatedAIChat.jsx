@@ -95,8 +95,8 @@ export function AnimatedAIChat({ onCreated }) {
       .then((d) => {
         if (Array.isArray(d?.providers) && d.providers.length) {
           setProviders(d.providers);
-          const first = d.providers.find((p) => p.id === 'openai') || d.providers[0];
-          if (first) setProvider(first.id);
+          const preferred = d.providers.find((p) => p.id === 'openai') || d.providers[0];
+          if (preferred) setProvider(preferred.id);
         }
       })
       .catch(() => {});
@@ -385,9 +385,12 @@ export function AnimatedAIChat({ onCreated }) {
                     value={provider}
                     onChange={(e) => setProvider(e.target.value)}
                     disabled={isLoading}
+                    aria-label="Modelo de IA"
                   >
-                    {providers.map((p) => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
+                    {providers.map((p, idx) => (
+                      <option key={`${p.id}-${p.model || idx}`} value={p.id}>
+                        {p.model ? `${p.name} · ${p.model}` : p.name}
+                      </option>
                     ))}
                   </select>
                 )}

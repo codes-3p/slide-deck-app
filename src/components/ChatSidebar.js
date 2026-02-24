@@ -17,13 +17,13 @@ export default function ChatSidebar({ onPresentationGenerated, minimized, onTogg
   const historyEndRef = useRef(null);
 
   useEffect(() => {
-    fetch((API_BASE || '') + '/api/providers')
+    fetch((API_BASE || '') + '/api/providers', { cache: 'no-store' })
       .then((r) => r.json())
       .then((d) => {
         if (Array.isArray(d.providers) && d.providers.length) {
           setProviders(d.providers);
-          const first = d.providers.find((p) => p.id === 'openai') || d.providers[0];
-          if (first) setProvider(first.id);
+          const preferred = d.providers.find((p) => p.id === 'openai') || d.providers[0];
+          if (preferred) setProvider(preferred.id);
         }
       })
       .catch(() => {});
@@ -124,12 +124,14 @@ export default function ChatSidebar({ onPresentationGenerated, minimized, onTogg
         <div ref={historyEndRef} />
       </div>
       <div className="chat-sidebar__input-area">
-        {providers.length > 1 && (
+        {providers.length >= 1 && (
           <div className="chat-sidebar__provider">
             <label htmlFor="chat-provider">{CHAT_SIDEBAR.providerLabel}</label>
             <select id="chat-provider" className="chat-sidebar__provider-select" value={provider} onChange={(e) => setProvider(e.target.value)}>
-              {providers.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
+              {providers.map((p, idx) => (
+                <option key={`${p.id}-${p.model || idx}`} value={p.id}>
+                  {p.model ? `${p.name} · ${p.model}` : p.name}
+                </option>
               ))}
             </select>
           </div>
