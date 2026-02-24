@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { LAYOUTS, DEFAULT_SLIDE, LAYOUT_KEYS } from './constants';
+import { LAYOUTS, DEFAULT_SLIDE, LAYOUT_KEYS, TRANSITIONS, ELEMENT_ANIMATIONS } from './constants';
 import { renderSlideToHtml, getContentFromEditor } from './utils/slideRender';
 import { downloadPptx } from './utils/exportPptx';
 import ChatSidebar from './components/ChatSidebar';
@@ -139,6 +139,24 @@ export default function App() {
     });
   };
 
+  const setSlideTransition = (transition) => {
+    setSlides((prev) => {
+      const next = [...prev];
+      const slide = next[currentIndex];
+      next[currentIndex] = { ...slide, transition };
+      return next;
+    });
+  };
+
+  const setSlideElementAnimation = (elementAnimation) => {
+    setSlides((prev) => {
+      const next = [...prev];
+      const slide = next[currentIndex];
+      next[currentIndex] = { ...slide, elementAnimation };
+      return next;
+    });
+  };
+
   const reorderSlides = (fromIndex, toIndex) => {
     if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0 || fromIndex >= slides.length || toIndex >= slides.length) return;
     setSlides((prev) => {
@@ -209,16 +227,17 @@ export default function App() {
             <span className="logo-icon" aria-hidden="true" />
             SlideDeck
           </h1>
-          <span className="deck-title-input deck-title-display">{deckTitle}</span>
+          <span className="deck-title-input deck-title-display" title="Título da apresentação">{deckTitle}</span>
           {templateId && (
             <span className="toolbar-template-badge" title="Template usado no export PPTX">
               Template: {templateId}
             </span>
           )}
+          <span className="toolbar-hint" aria-hidden="true">Chat → edite aqui → Baixar PPTX</span>
         </div>
         <div className="toolbar-right">
           {chatMinimized && (
-            <button type="button" className="btn btn-ai" onClick={() => setChatMinimized(false)}>Criar com IA</button>
+            <button type="button" className="btn btn-ai" onClick={() => setChatMinimized(false)} title="Abrir assistente para criar slides com IA">Criar com IA</button>
           )}
           <button
             type="button"
@@ -231,82 +250,140 @@ export default function App() {
               }
             }}
             disabled={!slides.length}
+            title="Exportar apresentação em PowerPoint (.pptx)"
           >
             Baixar PPTX
           </button>
-          <button type="button" className="btn btn-primary" onClick={openPresentation} disabled={!slides.length}>
-            Visualizar
+          <button type="button" className="btn btn-primary" onClick={openPresentation} disabled={!slides.length} title="Abrir em tela cheia">
+            Apresentar
           </button>
         </div>
       </header>
 
-      <main className="workspace">
-        <aside className="slide-panel">
-          <div className="slide-panel-header">
-            <span>Slides</span>
-            <button type="button" className="btn btn-icon slide-panel-add" onClick={addSlide} title="Novo slide">+</button>
-          </div>
-          <div className="slide-thumbnails">
-            {slides.map((slide, i) => {
-              const title = slide.content?.title || slide.content?.text || 'Slide';
-              const preview = typeof title === 'string' ? title : (slide.content?.left || '').slice(0, 60);
-              const isDragging = dragSlideIndex === i;
-              const isDropTarget = dropTargetIndex === i;
-              return (
-                <div
-                  key={i}
-                  className={`slide-thumb ${i === currentIndex ? 'active' : ''} ${isDragging ? 'slide-thumb--dragging' : ''} ${isDropTarget ? 'slide-thumb--drop-target' : ''}`}
-                  draggable
-                  onDragStart={(e) => handleSlideDragStart(e, i)}
-                  onDragEnd={handleSlideDragEnd}
-                  onDragOver={(e) => handleSlideDragOver(e, i)}
-                  onDragLeave={handleSlideDragLeave}
-                  onDrop={(e) => handleSlideDrop(e, i)}
-                  onClick={() => setCurrentIndex(i)}
+      <main className="workspace workspace-gjs">
+        <aside className="editor-panel editor-panel-left">
+          <div className="panel-section">
+            <div className="panel-section__header">Blocos</div>
+            <div className="blocks-grid">
+              {LAYOUT_KEYS.map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  className="block-card"
+                  onClick={() => {
+                    const newSlide = { ...DEFAULT_SLIDE, layout: key, content: { ...LAYOUTS[key].defaultContent } };
+                    setSlides((prev) => [...prev, newSlide]);
+                    setCurrentIndex(slides.length);
+                  }}
+                  title={`Adicionar slide: ${LAYOUTS[key].name}`}
                 >
-                  <span className="slide-thumb-num">{i + 1}</span>
-                  <div className="slide-thumb-content">{preview}</div>
-                  <div className="slide-thumb-actions" onClick={(e) => e.stopPropagation()}>
-                    <button type="button" className="slide-thumb-btn" onClick={() => moveSlide(i, 'up')} disabled={i === 0} title="Subir">↑</button>
-                    <button type="button" className="slide-thumb-btn" onClick={() => moveSlide(i, 'down')} disabled={i === slides.length - 1} title="Descer">↓</button>
-                    <button type="button" className="slide-thumb-btn" onClick={() => duplicateSlide(i)} title="Duplicar">⎘</button>
-                    <button type="button" className="slide-thumb-btn slide-thumb-remove" onClick={() => removeSlide(i)} disabled={slides.length <= 1} title="Remover">×</button>
+                  <span className="block-card__label">{LAYOUTS[key].name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="panel-section panel-section--layers">
+            <div className="panel-section__header">
+              <span>Camadas</span>
+              <button type="button" className="btn btn-icon slide-panel-add" onClick={addSlide} title="Novo slide">+</button>
+            </div>
+            <div className="slide-thumbnails">
+              {slides.map((slide, i) => {
+                const title = slide.content?.title || slide.content?.text || 'Slide';
+                const preview = typeof title === 'string' ? title : (slide.content?.left || '').slice(0, 60);
+                const isDragging = dragSlideIndex === i;
+                const isDropTarget = dropTargetIndex === i;
+                return (
+                  <div
+                    key={i}
+                    className={`slide-thumb ${i === currentIndex ? 'active' : ''} ${isDragging ? 'slide-thumb--dragging' : ''} ${isDropTarget ? 'slide-thumb--drop-target' : ''}`}
+                    draggable
+                    onDragStart={(e) => handleSlideDragStart(e, i)}
+                    onDragEnd={handleSlideDragEnd}
+                    onDragOver={(e) => handleSlideDragOver(e, i)}
+                    onDragLeave={handleSlideDragLeave}
+                    onDrop={(e) => handleSlideDrop(e, i)}
+                    onClick={() => setCurrentIndex(i)}
+                  >
+                    <span className="slide-thumb-num">{i + 1}</span>
+                    <div className="slide-thumb-content">{preview}</div>
+                    <div className="slide-thumb-actions" onClick={(e) => e.stopPropagation()}>
+                      <button type="button" className="slide-thumb-btn" onClick={() => moveSlide(i, 'up')} disabled={i === 0} title="Subir" aria-label="Subir slide">↑</button>
+                      <button type="button" className="slide-thumb-btn" onClick={() => moveSlide(i, 'down')} disabled={i === slides.length - 1} title="Descer" aria-label="Descer slide">↓</button>
+                      <button type="button" className="slide-thumb-btn" onClick={() => duplicateSlide(i)} title="Duplicar" aria-label="Duplicar slide">⎘</button>
+                      <button type="button" className="slide-thumb-btn slide-thumb-remove" onClick={() => removeSlide(i)} disabled={slides.length <= 1} title="Remover" aria-label="Remover slide">×</button>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </aside>
 
-        <section className="editor-area">
+        <section className="editor-area editor-canvas-area">
           {slides.length === 0 ? (
             <div className="editor-empty-state">
               <p>Nenhum slide.</p>
-              <p>Use <strong>Criar com IA</strong> no chat ou o botão <strong>+</strong> no painel para adicionar.</p>
+              <p>Clique num <strong>bloco</strong> à esquerda ou em <strong>Criar com IA</strong> para começar.</p>
             </div>
           ) : (
-            <>
-              <div className="editor-canvas-wrapper" onBlur={syncContentFromEditor}>
-                <div ref={editorRef} className="editor-canvas" data-ratio="16/9" />
-              </div>
-              <div className="slide-templates">
-                <span className="templates-label">Modelo do slide:</span>
-                <div className="template-buttons">
-                  {LAYOUT_KEYS.map((key) => (
-                    <button
-                      key={key}
-                      type="button"
-                      className={`template-btn ${currentSlide?.layout === key ? 'active' : ''}`}
-                      onClick={() => setSlideLayout(key)}
-                    >
-                      {LAYOUTS[key].name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </>
+            <div className="editor-canvas-wrapper" onBlur={syncContentFromEditor}>
+              <div ref={editorRef} className="editor-canvas" data-ratio="16/9" />
+            </div>
           )}
         </section>
+
+        <aside className="editor-panel editor-panel-right">
+          <div className="panel-section">
+            <div className="panel-section__header">Propriedades do slide</div>
+            {slides.length > 0 && currentSlide && (
+              <div className="properties-body">
+                <div className="property-group">
+                  <label className="property-label">Layout</label>
+                  <div className="template-buttons template-buttons--vertical">
+                    {LAYOUT_KEYS.map((key) => (
+                      <button
+                        key={key}
+                        type="button"
+                        className={`template-btn ${currentSlide?.layout === key ? 'active' : ''}`}
+                        onClick={() => setSlideLayout(key)}
+                      >
+                        {LAYOUTS[key].name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="property-group">
+                  <label className="property-label">Transição</label>
+                  <select
+                    className="property-select"
+                    value={currentSlide.transition || 'fade'}
+                    onChange={(e) => setSlideTransition(e.target.value)}
+                  >
+                    {TRANSITIONS.map((t) => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="property-group">
+                  <label className="property-label">Animação dos elementos</label>
+                  <select
+                    className="property-select"
+                    value={currentSlide.elementAnimation || 'fade'}
+                    onChange={(e) => setSlideElementAnimation(e.target.value)}
+                  >
+                    {ELEMENT_ANIMATIONS.map((a) => (
+                      <option key={a.id} value={a.id}>{a.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+            {slides.length === 0 && (
+              <p className="panel-section__empty">Selecione ou adicione um slide.</p>
+            )}
+          </div>
+        </aside>
       </main>
 
       {presentationOpen && (

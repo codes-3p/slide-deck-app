@@ -12,7 +12,7 @@ const SUGGESTIONS = [
 
 export default function ChatSidebar({ onPresentationGenerated, minimized, onToggleMinimize }) {
   const [messages, setMessages] = useState([
-    { id: 1, role: 'ai', text: 'Descreva o tema ou o conteúdo da apresentação. Eu gero os slides para você.', isWelcome: true }
+    { id: 1, role: 'ai', text: 'Descreva o tema ou o conteúdo da apresentação. Eu gero os slides para você. Depois edite no painel ao lado e baixe em PPTX.', isWelcome: true }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -132,7 +132,7 @@ export default function ChatSidebar({ onPresentationGenerated, minimized, onTogg
       <div className="chat-sidebar__input-area">
         {providers.length > 1 && (
           <div className="chat-sidebar__provider">
-            <label htmlFor="chat-provider">Modelo:</label>
+            <label htmlFor="chat-provider">Modelo de IA:</label>
             <select id="chat-provider" className="chat-sidebar__provider-select" value={provider} onChange={(e) => setProvider(e.target.value)}>
               {providers.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>
@@ -149,7 +149,7 @@ export default function ChatSidebar({ onPresentationGenerated, minimized, onTogg
         <div className="chat-sidebar__input-wrap">
           <textarea
             className="chat-sidebar__input"
-            placeholder="Descreva sua apresentação..."
+            placeholder="Ex.: Pitch de startup, relatório trimestral..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
