@@ -7,7 +7,7 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
 const OPENAI_BASE_URL = process.env.OPENAI_BASE_URL || undefined;
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
-const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'openrouter/free';
+const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'moonshotai/kimi-k2.5';
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || '';
 
@@ -47,7 +47,7 @@ function getAvailableProviders() {
     }
   }
   if (hasOpenRouter()) {
-    list.push({ id: 'openrouter', name: 'OpenRouter (free)', model: OPENROUTER_MODEL });
+    list.push({ id: 'openrouter', name: 'Kimi K2.5 (OpenRouter)', model: OPENROUTER_MODEL });
   }
   if (hasAnthropic()) {
     list.push({ id: 'anthropic', name: 'Anthropic (Claude)', model: process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet' });
