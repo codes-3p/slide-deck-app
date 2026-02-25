@@ -4,6 +4,147 @@
  * Usado pelo prompt da IA para decisões de tipografia, cor, composição e distribuição de conteúdo.
  */
 
+/**
+ * Catálogo de componentes visuais pré-definidos
+ * A IA usa esses IDs para selecionar componentes específicos, não criar do zero
+ */
+const VISUAL_COMPONENTS_CATALOG = {
+  // Layouts principais
+  layouts: {
+    hero: {
+      id: 'hero',
+      name: 'Hero Slide',
+      description: 'Slide de abertura impactante com gradiente de fundo',
+      components: ['background-gradient', 'large-title', 'subtitle'],
+      exportTemplate: 'powerpoint-hero'
+    },
+    timeline: {
+      id: 'timeline',
+      name: 'Timeline Events',
+      description: 'Linha temporal vertical com eventos marcados',
+      components: ['vertical-line', 'timeline-markers', 'event-cards'],
+      exportTemplate: 'powerpoint-timeline'
+    },
+    bullet_cards: {
+      id: 'bullet-cards',
+      name: 'Bullet Cards',
+      description: 'Lista com ícones em cards estilizados',
+      components: ['icon-cards', 'icon-set', 'card-background'],
+      exportTemplate: 'powerpoint-bullet-cards'
+    },
+    stats_grid: {
+      id: 'stats-grid',
+      name: 'Stats Grid',
+      description: 'Grade de métricas em cards coloridos',
+      components: ['metric-cards', 'number-highlight', 'small-icons'],
+      exportTemplate: 'powerpoint-stats-grid'
+    },
+    quote_card: {
+      id: 'quote-card',
+      name: 'Quote Card',
+      description: 'Citação com barra lateral e ícone de aspas',
+      components: ['quote-bar', 'large-quotes', 'author-line'],
+      exportTemplate: 'powerpoint-quote-card'
+    }
+  },
+
+  // Componentes visuais individuais
+  components: {
+    backgrounds: {
+      gradient_primary: {
+        id: 'gradient-primary',
+        type: 'gradient',
+        colors: ['primary', 'secondary'],
+        direction: '135deg'
+      },
+      card_bg: {
+        id: 'card-bg',
+        type: 'solid',
+        color: 'background-muted',
+        border: '1px solid border-color',
+        border_radius: '12px',
+        shadow: '0 4px 24px rgba(0, 0, 0, 0.4)'
+      }
+    },
+    
+    icon_sets: {
+      lucide_events: {
+        id: 'lucide-events',
+        set: 'lucide',
+        icons: ['calendar-days', 'flag', 'landmark', 'book-open', 'clock', 'map-pin'],
+        usage: 'dates, historical events, locations'
+      },
+      lucide_metrics: {
+        id: 'lucide-metrics',
+        set: 'lucide',
+        icons: ['trending-up', 'target', 'award', 'star', 'trophy', 'gauge'],
+        usage: 'performance, goals, achievements, metrics'
+      },
+      lucide_business: {
+        id: 'lucide-business',
+        set: 'lucide',
+        icons: ['briefcase', 'building', 'users', 'globe', 'dollar-sign', 'chart'],
+        usage: 'business, company, market, finance'
+      }
+    },
+    
+    typography: {
+      title_hero: {
+        id: 'title-hero',
+        type: 'title',
+        font_family: 'font-serif',
+        size: '3rem',
+        weight: '400',
+        color: 'white'
+      },
+      title_section: {
+        id: 'title-section',
+        type: 'title',
+        font_family: 'font-serif',
+        size: '2.5rem',
+        weight: '600',
+        color: 'primary'
+      },
+      body_card: {
+        id: 'body-card',
+        type: 'body',
+        font_family: 'font-sans',
+        size: '1rem',
+        weight: '400',
+        color: 'text-primary',
+        line_height: '1.6'
+      }
+    }
+  },
+
+  // Regras de seleção baseadas no conteúdo
+  selectionRules: {
+    // Quando usar cada layout
+    content_mapping: {
+      events_historical: 'timeline',
+      dates_chronology: 'timeline',
+      achievements_list: 'bullet_cards',
+      metrics_kpi: 'stats_grid',
+      testimonials: 'quote_card',
+      opening_intro: 'hero'
+    },
+    
+    // Quando usar cada conjunto de ícones
+    icon_mapping: {
+      history_events: 'lucide-events',
+      performance_data: 'lucide-metrics',
+      corporate_info: 'lucide-business'
+    },
+    
+    // Paleta de cores por tema
+    color_schemes: {
+      corporate: { primary: '#001489', secondary: '#4A90E2', neutral: '#6B7280' },
+      startup: { primary: '#6366f1', secondary: '#ec4899', neutral: '#6B7280' },
+      educational: { primary: '#065f46', secondary: '#10B981', neutral: '#6B7280' }
+    }
+  }
+};
+
 const ADVANCED_DESIGN_UX = `
 ---- NOÇÃO AVANÇADA DE DESIGN E UX MODERNO (OBRIGATÓRIO) ----
 A ferramenta DEVE demonstrar conhecimento avançado de design e produzir apresentações com UX moderno e sofisticado. Não é aceitável output genérico ou "template básico".
@@ -170,148 +311,6 @@ function getIdentityManualInstructions() {
 function getContentCompleteness() {
   return CONTENT_COMPLETENESS;
 }
-
-/**
- * Catálogo de componentes visuais pré-definidos
- * A IA usa esses IDs para selecionar componentes específicos, não criar do zero
- */
-
-const VISUAL_COMPONENTS_CATALOG = {
-  // Layouts principais
-  layouts: {
-    hero: {
-      id: 'hero',
-      name: 'Hero Slide',
-      description: 'Slide de abertura impactante com gradiente de fundo',
-      components: ['background-gradient', 'large-title', 'subtitle'],
-      exportTemplate: 'powerpoint-hero'
-    },
-    timeline: {
-      id: 'timeline',
-      name: 'Timeline Events',
-      description: 'Linha temporal vertical com eventos marcados',
-      components: ['vertical-line', 'timeline-markers', 'event-cards'],
-      exportTemplate: 'powerpoint-timeline'
-    },
-    bullet_cards: {
-      id: 'bullet-cards',
-      name: 'Bullet Cards',
-      description: 'Lista com ícones em cards estilizados',
-      components: ['icon-cards', 'icon-set', 'card-background'],
-      exportTemplate: 'powerpoint-bullet-cards'
-    },
-    stats_grid: {
-      id: 'stats-grid',
-      name: 'Stats Grid',
-      description: 'Grade de métricas em cards coloridos',
-      components: ['metric-cards', 'number-highlight', 'small-icons'],
-      exportTemplate: 'powerpoint-stats-grid'
-    },
-    quote_card: {
-      id: 'quote-card',
-      name: 'Quote Card',
-      description: 'Citação com barra lateral e ícone de aspas',
-      components: ['quote-bar', 'large-quotes', 'author-line'],
-      exportTemplate: 'powerpoint-quote-card'
-    }
-  },
-
-  // Componentes visuais individuais
-  components: {
-    backgrounds: {
-      gradient_primary: {
-        id: 'gradient-primary',
-        type: 'gradient',
-        colors: ['primary', 'secondary'],
-        direction: '135deg'
-      },
-      card_bg: {
-        id: 'card-bg',
-        type: 'solid',
-        color: 'background-muted',
-        border: '1px solid border-color',
-        border_radius: '12px',
-        shadow: '0 4px 24px rgba(0, 0, 0, 0.4)'
-      }
-    },
-    
-    icon_sets: {
-      lucide_events: {
-        id: 'lucide-events',
-        set: 'lucide',
-        icons: ['calendar-days', 'flag', 'landmark', 'book-open', 'clock', 'map-pin'],
-        usage: 'dates, historical events, locations'
-      },
-      lucide_metrics: {
-        id: 'lucide-metrics',
-        set: 'lucide',
-        icons: ['trending-up', 'target', 'award', 'star', 'trophy', 'gauge'],
-        usage: 'performance, goals, achievements, metrics'
-      },
-      lucide_business: {
-        id: 'lucide-business',
-        set: 'lucide',
-        icons: ['briefcase', 'building', 'users', 'globe', 'dollar-sign', 'chart'],
-        usage: 'business, company, market, finance'
-      }
-    },
-    
-    typography: {
-      title_hero: {
-        id: 'title-hero',
-        type: 'title',
-        font_family: 'font-serif',
-        size: '3rem',
-        weight: '400',
-        color: 'white'
-      },
-      title_section: {
-        id: 'title-section',
-        type: 'title',
-        font_family: 'font-serif',
-        size: '2.5rem',
-        weight: '600',
-        color: 'primary'
-      },
-      body_card: {
-        id: 'body-card',
-        type: 'body',
-        font_family: 'font-sans',
-        size: '1rem',
-        weight: '400',
-        color: 'text-primary',
-        line_height: '1.6'
-      }
-    }
-  },
-
-  // Regras de seleção baseadas no conteúdo
-  selectionRules: {
-    // Quando usar cada layout
-    content_mapping: {
-      events_historical: 'timeline',
-      dates_chronology: 'timeline',
-      achievements_list: 'bullet_cards',
-      metrics_kpi: 'stats_grid',
-      testimonials: 'quote_card',
-      opening_intro: 'hero'
-    },
-    
-    // Quando usar cada conjunto de ícones
-    icon_mapping: {
-      history_events: 'lucide-events',
-      performance_data: 'lucide-metrics',
-      corporate_info: 'lucide-business'
-    },
-    
-    // Paleta de cores por tema
-    color_schemes: {
-      corporate: { primary: '#001489', secondary: '#4A90E2', neutral: '#6B7280' },
-      startup: { primary: '#6366f1', secondary: '#ec4899', neutral: '#6B7280' },
-      educational: { primary: '#065f46', secondary: '#10B981', neutral: '#6B7280' }
-    }
-  }
-};
 
 /**
  * Função principal que a IA usa para escolher componentes

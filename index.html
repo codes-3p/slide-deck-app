@@ -135,7 +135,41 @@
     </div>
   </aside>
 
-  <!-- Modal de Confiirmação (simplificado) -->
+  <!-- Modal de Geração com IA -->
+  <div id="ai-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>✨ Criar com IA</h3>
+        <button type="button" class="modal-close" id="ai-modal-close">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="ai-description">Descreva sua apresentação</label>
+          <textarea id="ai-description" rows="4" placeholder="Ex: Apresentação sobre sustentabilidade para empresa de energia solar, 5 slides, tom profissional"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="ai-deck-title">Título da apresentação (opcional)</label>
+          <input type="text" id="ai-deck-title" placeholder="Deixe em branco para gerar automaticamente" />
+        </div>
+        <div class="form-group">
+          <label>Anexar arquivo (opcional)</label>
+          <div class="file-upload-zone" id="file-upload-zone">
+            <div class="file-upload-icon">📎</div>
+            <div class="file-upload-text" id="file-upload-text">Arraste um arquivo ou clique para escolher</div>
+            <div class="file-upload-hint">PDF, PPTX, TXT, MD ou imagem</div>
+          </div>
+          <input type="file" id="ai-file" accept=".pptx,.txt,.md,.pdf,image/jpeg,image/png,image/webp,image/gif" hidden />
+        </div>
+        <div class="ai-status" id="ai-status"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="ai-modal-close-btn">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="ai-generate">Gerar Apresentação</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Confirmação (simplificado) -->
   <div id="ai-confirm-modal" class="modal-overlay hidden">
     <div class="modal small-modal">
       <div class="modal-header">
